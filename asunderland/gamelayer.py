@@ -18,16 +18,43 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import pygame
+from threading import Thread, Lock
 
-class GameLayer():
+class InputLayer( Thread ):
+
+   ''' This class runs constantly in the background and tries to make the other
+   classes do things based on user input received. '''
+
+   engine = None
+
+   def __init__( self, engine ):
+      self.engine = engine
+      Thread.__init__( self )
+
+   def run( self ):
+      # Wait for the engine to start up.
+      while not self.engine.running:
+         pygame.time.wait( 100 )
+ 
+      pygame.fastevent.init()
+      while self.engine.running:
+         event = pygame.fastevent.wait()
+         if event.type == pygame.QUIT:
+            self.engine.running = False
+         elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+               self.engine.running = False
+
+class GraphicsLayer():
    config_data = None
+   window = None
 
    def __init__( self, config_data_in ):
       self.config_data = config_data_in
 
    def start( self ):
       pygame.init()
-      window = pygame.display.set_mode(
+      self.window = pygame.display.set_mode(
           (self.config_data['Options']['WindowWidth'],
          self.config_data['Options']['WindowHeight'])
       )
@@ -39,9 +66,19 @@ class GameLayer():
    def events_poll( self ):
       pass
 
-   def screen_blank( self ):
-      pass
+   def screen_blank( self, color=(0, 0, 0) ):
+      mask = pygame.Surface(
+         (self.config_data['Options']['WindowWidth'],
+            self.config_data['Options']['WindowHeight']),
+         pygame.SRCALPHA
+      )
+      mask.fill( color )
+      mask.set_alpha( 255 )
+      self.window.blit( mask, (0, 0) )
 
-   def sleep( self, sleep_us ):
-      pygame.time.wait( sleep_us )
+   def screen_flip( self ):
+      pygame.display.flip()
+
+def sleep( sleep_us ):
+   pygame.time.wait( sleep_us )
 

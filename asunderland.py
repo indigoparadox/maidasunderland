@@ -34,11 +34,13 @@ def main():
       print "Unable to open configuration file. Aborting."
 
    # Start the abstraction layers and game engine.
-   my_gamelayer = gamelayer.GameLayer( config_data )
-   my_gamelayer.start()
-   my_engine = engine_title.EngineTitle( my_gamelayer )
-   my_engine.start()
-   my_gamelayer.quit()
+   my_graphicslayer = gamelayer.GraphicsLayer( config_data )
+   my_graphicslayer.start()
+   my_engine = engine.EngineTitle( my_graphicslayer )
+   my_inputlayer = gamelayer.InputLayer( my_engine )
+   my_inputlayer.start()
+   my_engine.loop()
+   my_graphicslayer.quit()
    pass
 
 if __name__ == '__main__':
