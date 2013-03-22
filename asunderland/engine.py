@@ -17,10 +17,31 @@ You should have received a copy of the GNU General Public License
 along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-class Engine():
-   gamelayer = None
-   running = True
+import gamelayer
 
-   def __init__( self, gamelayer_in ):
-      self.gamelayer = gamelayer_in
+class ServerEngine():
+   pass
+
+class ClientEngine():
+   graphicslayer = None
+   running = False
+
+   def __init__( self, graphicslayer ):
+      self.graphicslayer = graphicslayer
+
+class EngineTitle( ClientEngine, ServerEngine ):
+
+   ''' This engine should be somewhat unique in that it has no real server
+   component. All state is handled within the engine module.
+
+   It should just display a pretty menu from which options relevant to starting
+   the game proper may be selected. '''
+
+   def loop( self ):
+      self.running = True
+      while self.running:
+         self.graphicslayer.screen_blank( (255, 255, 255) )
+
+         self.graphicslayer.screen_flip()
+         gamelayer.sleep( 100 )
 
