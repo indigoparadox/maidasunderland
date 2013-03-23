@@ -17,8 +17,9 @@ You should have received a copy of the GNU General Public License
 along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-import client
-import server
-import gamelayer
-import net
+class ServerEngine():
+   pass
+
+class ServerAdventure( ServerEngine ):
+   pass
 

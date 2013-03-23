@@ -31,22 +31,22 @@ def main():
       os.chdir( 'data' )
 
    # Read configuration.
-   config_data = None
+   configdata = None
    try:
-      with open( 'config.yaml', 'r' ) as config_file:
-         config_data = load( config_file )
+      with open( 'config.yaml', 'r' ) as configfile:
+         configdata = load( configfile )
    except:
       print "Unable to open configuration file. Aborting."
 
    # Start the abstraction layers and game engine.
-   my_graphicslayer = gamelayer.GraphicsLayer( config_data )
+   my_graphicslayer = gamelayer.GraphicsLayer( configdata )
    my_graphicslayer.start()
-   my_engine = engine.EngineTitle( my_graphicslayer )
-   my_inputlayer = gamelayer.InputLayer( my_engine )
-   my_inputlayer.start()
-   my_engine.loop()
+   my_engine = client.ClientTitle( configdata, my_graphicslayer )
+   while None != my_engine:
+      my_inputlayer = gamelayer.InputLayer( my_engine )
+      my_inputlayer.start()
+      my_engine = my_engine.loop()
    my_graphicslayer.quit()
-   pass
 
 if __name__ == '__main__':
    main()
