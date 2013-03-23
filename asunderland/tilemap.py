@@ -17,30 +17,6 @@ You should have received a copy of the GNU General Public License
 along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-from irc import server as irc_server
-
-DEFAULT_PORT = 6300
-
-class AsunderlandIRCClientHandler( irc_server.IRCClient ):
-   def handle_away( self, params ):
-      # TODO: Implement some kind of sleep bubble.
-      pass
-
-class AsunderlandIRCServer( irc_server.IRCServer ):
-   def __init__( self, args, kwargs ):
-      
-      irc_server.IRCServer.__init__( self, args, kwargs )
-
-      # Create a default channel and set a default map.
-      channel = self.channels.setdefault(
-         '#lobby',
-         irc_server.IRCChannel( '#lobby' )
-      )
-      channel.topic = 'MAP:Farm'
-
-class ServerEngine():
-   pass
-
-class ServerAdventure( ServerEngine ):
+class TileMap():
    pass
 
