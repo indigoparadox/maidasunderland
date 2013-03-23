@@ -35,7 +35,7 @@ class InputLayer( Thread ):
       # Wait for the engine to start up.
       while not self.engine.running:
          pygame.time.wait( 100 )
- 
+   
       pygame.fastevent.init()
       while self.engine.running:
          event = pygame.fastevent.wait()

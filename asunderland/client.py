@@ -19,19 +19,18 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 
 import gamelayer
 
-class ServerEngine():
-   pass
-
 class ClientEngine():
+   config_data = None
    graphicslayer = None
    netclient = None
    running = False
 
-   def __init__( self, graphicslayer, netclient=None ):
+   def __init__( self, configdata, graphicslayer, netclient=None ):
+      self.configdata = configdata
       self.graphicslayer = graphicslayer
       self.netclient = netclient
 
-class EngineTitle( ClientEngine ):
+class ClientTitle( ClientEngine ):
 
    ''' This engine should be somewhat unique in that it has no real server
    component. All state is handled within the engine module.
@@ -40,7 +39,7 @@ class EngineTitle( ClientEngine ):
    the game proper may be selected. '''
 
    def process_key( self, key_char_in ):
-      print key_char_in
+      print 'Title' + key_char_in
 
    def loop( self ):
       self.running = True
@@ -50,6 +49,18 @@ class EngineTitle( ClientEngine ):
          self.graphicslayer.screen_flip()
          gamelayer.sleep( 100 )
 
-class EngineAdventure( ClientEngine ):
-   pass
+      # Return the client to begin the game with.
+      client_out = ClientAdventure( self.config_data, self.graphicslayer )
+      return client_out
+
+class ClientAdventure( ClientEngine ):
+
+   def process_key( self, key_char_in ):
+      print 'Adventure' + key_char_in
+
+   def loop( self ):
+      self.running = True
+      while self.running:
+         self.graphicslayer.screen_flip()
+         gamelayer.sleep( 100 )
 
