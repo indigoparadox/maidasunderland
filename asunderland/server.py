@@ -36,7 +36,7 @@ class AsunderlandIRCServer( irc_server.IRCServer ):
          '#lobby',
          irc_server.IRCChannel( '#lobby' )
       )
-      channel.topic = 'MAP:Farm'
+      channel.topic = 'Map:Farm'
 
 class ServerEngine():
    pass
