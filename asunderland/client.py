@@ -18,26 +18,54 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import gamelayer
+import server
+import logging
+from irc import client as irc_client
 
 class ClientEngine():
    configdata = None
    graphicslayer = None
-   netclient = None
+   serveraddress = None
    running = False
-   singleplayer = True
-   spserver = None
+   logger = None
+   client = None
+   connection = None
 
-   def __init__( self, configdata, graphicslayer, netclient=None ):
+   def __init__( self, configdata, graphicslayer ):
+      self.logger = logging.getLogger( 'clientengine' )
       self.configdata = configdata
       self.graphicslayer = graphicslayer
-      self.netclient = netclient
 
-   def set_sp_server( self, spserver ):
-      self.spserver = spserver
+   def connect(
+      self,
+      serveraddress=("localhost", server.DEFAULT_PORT),
+      client=None,
+      connect = None
+   ):
 
-   def clean_up( self ):
-      if None != self.spserver:
-         self.spserver.shutdown()
+      ''' Connect to the specified server. This is a separate method so it can
+      avoid being called on special cases like the title screen. 
+      
+      This method can be passed an existing client by another client engine
+      instantiating it instead of a server address in order to avoid dropping
+      connection.'''
+
+      if None == client or None == connection:
+         self.serveraddress = serveraddress
+         self.logger.info(
+            'Connecting to %s on port %d...' % self.serveraddress
+         )
+         self.client = irc_client.IRC()
+         self.connection = self.client.server().connect(
+            serveraddress[0],
+            serveraddress[1],
+            'tester' # FIXME
+         )
+      else:
+         # Preserve a pre-existing client connection.
+         pass
+
+
 
 class ClientTitle( ClientEngine ):
 
@@ -59,8 +87,6 @@ class ClientTitle( ClientEngine ):
          self.graphicslayer.screen_flip()
          gamelayer.sleep( 100 )
 
-      self.clean_up()
-
       # Return the client to begin the game with.
       client_out = ClientAdventure( self.configdata, self.graphicslayer )
       return client_out
@@ -75,6 +101,4 @@ class ClientAdventure( ClientEngine ):
       while self.running:
          self.graphicslayer.screen_flip()
          gamelayer.sleep( 100 )
-
-      self.clean_up()
 

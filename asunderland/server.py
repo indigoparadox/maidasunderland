@@ -19,6 +19,8 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 
 from irc import server as irc_server
 
+DEFAULT_PORT = 6300
+
 class ServerClientHandler( irc_server.IRCClient ):
    def handle_away( self, params ):
       # TODO: Implement some kind of sleep bubble.

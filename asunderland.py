@@ -62,24 +62,27 @@ def main():
    my_engine = client.ClientTitle( configdata, my_graphicslayer )
 
    # Keep playing until we don't get passed another engine by the main loop.
+   my_server = None
    while None != my_engine:
       # Setup a fresh game layer.
       my_inputlayer = gamelayer.InputLayer( my_engine )
       my_inputlayer.start()
 
-      if my_engine.singleplayer and \
-      not isinstance( my_engine, client.ClientTitle ):
+      if not isinstance( my_engine, client.ClientTitle ):
          # If this is an SP game, start a local server to host it in the
          # background.
          my_logger.info( 'Starting server on localhost for single player...' )
          my_server = irc_server.IRCServer(
-            ('localhost', 6300), server.ServerClientHandler
+            ('localhost', server.DEFAULT_PORT), server.ServerClientHandler
          )
          Thread( target=my_server.serve_forever ).start()
-         my_engine.set_sp_server( my_server )
+         my_engine.connect()
 
       # Delegate the main loop to the engine we've built.
       my_engine = my_engine.loop()
+      if None != my_server:
+         my_logger.info( 'Stopping server on localhost...' )
+         my_server.shutdown()
 
    my_graphicslayer.quit()
    logging.shutdown()
