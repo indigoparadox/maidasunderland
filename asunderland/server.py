@@ -22,6 +22,20 @@ from irc import server as irc_server
 DEFAULT_PORT = 6300
 
 class AsunderlandIRCClientHandler( irc_server.IRCClient ):
+
+   def handle_movement( self, params ):
+      # TODO: Determine the player's current location on their map and if there
+      #       are any collisions. Respond to the client with their new position.
+      print params
+
+   def handle_who( self, params ):
+      # TODO
+      pass
+
+   def handle_whois( self, params ):
+      # TODO
+      pass
+
    def handle_away( self, params ):
       # TODO: Implement some kind of sleep bubble.
       pass
@@ -37,6 +51,8 @@ class AsunderlandIRCServer( irc_server.IRCServer ):
          irc_server.IRCChannel( '#lobby' )
       )
       channel.topic = 'Map:Farm'
+
+      # TODO: Load the map into the server to calculate collisions/etc.
 
 class ServerEngine():
    pass
