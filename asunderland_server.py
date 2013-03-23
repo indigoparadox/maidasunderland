@@ -18,42 +18,23 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import argparse
-from miniircd import miniircd
+import logging
+from irc import server
 
-class AsunderlandClient( miniircd.Client ):
-
-   ''' This class overrides the modified miniircd client handler, allowing most
-   of the game-related tweaks to remain in this file, separate from the
-   miniircd code.  '''
-
-   pass
-
-class AsunderlandServer( miniircd.Server ):
-
-   ''' This class overrides the modified miniircd server, allowing most of the
-   game-related tweaks to remain in this file, separate from the miniircd code.
-   '''
-
-   def create_client( self, conn ):
-      print "Asunderland client!"
-      return AsunderlandClient( self, conn )
+class AsunderlandClientHandler( server.IRCClient ):
+   def handle_away( self, params ):
+      pass
 
 def main():
-   parser = argparse.ArgumentParser()
-   options = parser.parse_args()
+   #parser = argparse.ArgumentParser()
+   #options = parser.parse_args()
 
-   # Quick and dirty. Just start a crude IRC server for now. We'll bolt it on
-   # tothe game engine later.
-   options.ports = [6300]
-   options.password = ''
-   options.motd = ''
-   options.verbose = True
-   options.debug = False
-   options.logdir = ''
-   options.statedir = ''
+   logging.basicConfig()
 
-   server = AsunderlandServer( options )
-   server.start()
+   ## Quick and dirty. Just start a crude IRC server for now. We'll bolt it on
+   ## tothe game engine later.
+   my_server = server.IRCServer( ("", 6300), AsunderlandClientHandler )
+   my_server.serve_forever()
 
 if __name__ == '__main__':
    main()
