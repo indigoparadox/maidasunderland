@@ -19,11 +19,8 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
 import logging
-from irc import server
-
-class AsunderlandClientHandler( server.IRCClient ):
-   def handle_away( self, params ):
-      pass
+from irc import server as irc_server
+from asunderland import server as as_server
 
 def main():
    #parser = argparse.ArgumentParser()
@@ -33,7 +30,9 @@ def main():
 
    ## Quick and dirty. Just start a crude IRC server for now. We'll bolt it on
    ## tothe game engine later.
-   my_server = server.IRCServer( ("", 6300), AsunderlandClientHandler )
+   my_server = irc_server.IRCServer(
+      ("", 6300), as_server.ServerClientHandler
+   )
    my_server.serve_forever()
 
 if __name__ == '__main__':

@@ -20,15 +20,24 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 import gamelayer
 
 class ClientEngine():
-   config_data = None
+   configdata = None
    graphicslayer = None
    netclient = None
    running = False
+   singleplayer = True
+   spserver = None
 
    def __init__( self, configdata, graphicslayer, netclient=None ):
       self.configdata = configdata
       self.graphicslayer = graphicslayer
       self.netclient = netclient
+
+   def set_sp_server( self, spserver ):
+      self.spserver = spserver
+
+   def clean_up( self ):
+      if None != self.spserver:
+         self.spserver.shutdown()
 
 class ClientTitle( ClientEngine ):
 
@@ -50,8 +59,10 @@ class ClientTitle( ClientEngine ):
          self.graphicslayer.screen_flip()
          gamelayer.sleep( 100 )
 
+      self.clean_up()
+
       # Return the client to begin the game with.
-      client_out = ClientAdventure( self.config_data, self.graphicslayer )
+      client_out = ClientAdventure( self.configdata, self.graphicslayer )
       return client_out
 
 class ClientAdventure( ClientEngine ):
@@ -64,4 +75,6 @@ class ClientAdventure( ClientEngine ):
       while self.running:
          self.graphicslayer.screen_flip()
          gamelayer.sleep( 100 )
+
+      self.clean_up()
 
