@@ -56,14 +56,28 @@ class ProtoTile():
 class TileSet():
    image = None
    prototiles = []
+   dimensions = (32, 32)
 
 class TileMap():
    tiles = []
    tilesets = [] # One map can pull in more than one TileSet.
    logger = None
 
-   def __init__( self ):
+   def __init__( self, mapdata ):
       self.logger = logging.getLogger( 'asunderland.tilemap' )
+
+      # Load the tilesets.
+      for tileset in mapdata['Tilesets']:
+         self.load_tileset( tileset )
+
+      for rowdata in mapdata['Layout']:
+         rowlist = []
+         for tile in rowdata.split( ',' ):
+            split = tile.split( '-' )
+            rowlist.append( (int( split[0] ), int( split[1] )) )
+         self.tiles.append( rowlist )
+
+      print self.tiles
 
    def load_tileset( self, tilesetpath ):
       try:
@@ -85,6 +99,7 @@ class TileMap():
                tileset.prototiles.append( ProtoTile(
                   tileset, coordlist, tiledata['Resistance']
                ) )
+            self.tilesets.append( tileset )
                
       except:
          self.logger.error( 'Unable to load tileset %s!' % tilesetpath )

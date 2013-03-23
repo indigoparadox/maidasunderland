@@ -151,9 +151,7 @@ class ClientAdventure( ClientEngine ):
          
          mapdata = load( mapfile )
 
-         self.gamemap = tilemap.TileMap()
-         for tileset in mapdata['Tilesets']:
-            self.gamemap.load_tileset( tileset )
+         self.gamemap = tilemap.TileMap( mapdata )
 
       #except:
       #   # TODO: Set the map to a default or random map or something?
@@ -162,6 +160,16 @@ class ClientAdventure( ClientEngine ):
    def loop( self ):
       self.running = True
       while self.running:
+
+         # Draw the tiles currently on screen.
+         # TODO: Limit this to the current screen.
+         for row in self.gamemap.tiles:
+            for tile in row:
+               coords = self.gamemap.tilesets[tile[0]].prototiles[tile[1]].framecoords[self.gamemap.tilesets[tile[0]].prototiles[tile[1]].frameindex]
+               print coords
+               #gamelayer.screen_blit(
+               #   self.gamemap.tilesets[tile[0]].image,
+               #)
 
          # Loop maintenance.
          self.client.process_once()
