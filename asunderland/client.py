@@ -39,10 +39,11 @@ class ClientTitle( ClientEngine ):
    the game proper may be selected. '''
 
    def process_key( self, key_char_in ):
-      print 'Title' + key_char_in
+      self.running = False
 
    def loop( self ):
       self.running = True
+      print "Press any key to continue..."
       while self.running:
          self.graphicslayer.screen_blank( (255, 255, 255) )
 
