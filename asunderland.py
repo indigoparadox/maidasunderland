@@ -72,8 +72,9 @@ def main():
          # If this is an SP game, start a local server to host it in the
          # background.
          my_logger.info( 'Starting server on localhost for single player...' )
-         my_server = irc_server.IRCServer(
-            ('localhost', server.DEFAULT_PORT), server.ServerClientHandler
+         my_server = server.AsunderlandIRCServer(
+            ('localhost', server.DEFAULT_PORT),
+            server.AsunderlandIRCClientHandler
          )
          Thread( target=my_server.serve_forever ).start()
          my_engine.connect()
