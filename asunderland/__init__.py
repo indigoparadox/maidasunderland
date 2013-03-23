@@ -20,5 +20,4 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 import client
 import server
 import gamelayer
-import net
 

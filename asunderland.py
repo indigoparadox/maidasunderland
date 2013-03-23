@@ -18,6 +18,8 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import os
+import logging
+import argparse
 from asunderland import *
 from irc import server as irc_server
 from threading import Thread
@@ -28,6 +30,20 @@ except ImportError:
    from yaml import Loader, Dumper
 
 def main():
+   parser = argparse.ArgumentParser()
+   parser.add_argument(
+      '-d', '--debug', action='store_true', dest='debug',
+      help='Display debug/info messages on stdout.'
+   )
+   args = parser.parse_args()
+
+   if args.debug:
+      logging.basicConfig( level=logging.DEBUG )
+   else:
+      logging.basicConfig()
+
+   my_logger = logging.getLogger( 'asunderland' )
+
    # If there's a data directory, descend into it.
    if os.path.isdir( 'data' ):
       os.chdir( 'data' )
@@ -38,7 +54,7 @@ def main():
       with open( 'config.yaml', 'r' ) as configfile:
          configdata = load( configfile )
    except:
-      print "Unable to open configuration file. Aborting."
+      my_logger.error( 'Unable to open configuration file. Aborting.' )
 
    # Start the abstraction layers and game engine.
    my_graphicslayer = gamelayer.GraphicsLayer( configdata )
@@ -55,9 +71,9 @@ def main():
       not isinstance( my_engine, client.ClientTitle ):
          # If this is an SP game, start a local server to host it in the
          # background.
-         print "Starting server on localhost for single player..."
+         my_logger.info( 'Starting server on localhost for single player...' )
          my_server = irc_server.IRCServer(
-            ("localhost", 6300), server.ServerClientHandler
+            ('localhost', 6300), server.ServerClientHandler
          )
          Thread( target=my_server.serve_forever ).start()
          my_engine.set_sp_server( my_server )
@@ -66,6 +82,7 @@ def main():
       my_engine = my_engine.loop()
 
    my_graphicslayer.quit()
+   logging.shutdown()
 
 if __name__ == '__main__':
    main()
