@@ -89,6 +89,9 @@ class GraphicsLayer():
 def sleep( sleep_us ):
    pygame.time.wait( sleep_us )
 
+def load_image( image_path_in ):
+   return pygame.image.load( image_path_in )
+
 def key_decode( event_key_in ):
    
    ''' Given the result of a key event, this should return the character it

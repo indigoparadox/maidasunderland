@@ -22,8 +22,14 @@ import server
 import tilemap
 import logging
 import re
+import os
 from threading import Thread
 from irc import client as irc_client
+from yaml import load, dump
+try:
+   from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+   from yaml import Loader, Dumper
 
 class AsunderlandIRCClient( irc_client.IRC ):
    pass
@@ -38,7 +44,7 @@ class ClientEngine():
    connection = None
 
    def __init__( self, configdata, graphicslayer ):
-      self.logger = logging.getLogger( 'clientengine' )
+      self.logger = logging.getLogger( 'asunderland.clientengine' )
       self.configdata = configdata
       self.graphicslayer = graphicslayer
 
@@ -122,15 +128,32 @@ class ClientAdventure( ClientEngine ):
 
    def on_topic( self, connection, event ):
       # Attempt to grab the map name from the channel topic.
-      match_map = re.match( r'MAP:(\S*)', event.arguments[0] )
+      match_map = re.match( r'Map:(\S*)', event.arguments[0] )
       if None != match_map.groups():
-         self.gamemap = tilemap.TileMap()
+         self.load_map( match_map.groups()[0] )
       else:
          # TODO: Set the map to a default or random map or something?
          pass
 
    def process_key( self, key_char_in ):
       print 'Adventure' + key_char_in
+
+   def load_map( self, mapname ):
+      #try:
+      # Load the map data file.
+      mappath = os.path.join( 'maps', mapname + '.yaml' )
+      self.logger.info( 'Attempting to load map %s...' %  mappath )
+      with open( mappath, 'r' ) as mapfile:
+         
+         mapdata = load( mapfile )
+
+         self.gamemap = tilemap.TileMap()
+         for tileset in mapdata['Tilesets']:
+            self.gamemap.load_tileset( tileset )
+
+      #except:
+      #   # TODO: Set the map to a default or random map or something?
+      #   pass
 
    def loop( self ):
       self.running = True

@@ -17,6 +17,75 @@ You should have received a copy of the GNU General Public License
 along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+import logging
+import gamelayer
+from yaml import load, dump
+try:
+   from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+   from yaml import Loader, Dumper
+
+class Tile():
+   prototype = None # A reference to a ProtoTile.
+
+class ProtoTile():
+
+   ''' A prototypical tile stored in the tiles list in a tileset. '''
+
+   tileset = None
+   framecoords = [] # A list of coords for each animation frame.
+   frameindex = 0 # The index of the last framecoord drawn.
+   resistance = 0
+
+   def __init__( self, tileset, coords, resistance=0 ):
+      self.tileset = tileset
+      self.framecoords = coords
+
+   def get_current_frame( self ):
+      try:
+         return self.framecoords[frameindex]
+      except:
+         return None
+
+   def animate_next( self ):
+      if len( self.framecoords ) > self.frameindex + 1:
+         self.frameindex += 1
+      else:
+         self.frameindex = 0
+
+class TileSet():
+   image = None
+   prototiles = []
+
 class TileMap():
-   pass
+   tiles = []
+   tilesets = [] # One map can pull in more than one TileSet.
+   logger = None
+
+   def __init__( self ):
+      self.logger = logging.getLogger( 'asunderland.tilemap' )
+
+   def load_tileset( self, tilesetpath ):
+      try:
+         self.logger.debug(
+            'Loading tileset "%s"...' % tilesetpath
+         )
+         with open( tilesetpath, 'r' ) as tilesetfile:
+            tileset = TileSet()
+            tilesetdata = load( tilesetfile )
+            tileset.image = gamelayer.load_image( tilesetdata['Image'] )
+            for tiledata in tilesetdata['Tiles']:
+               coordlist = []
+               for coord in tiledata['Frames']:
+                  coordlist.append( (coord['X'], coord['Y']) )
+               self.logger.debug(
+                  'Loading tile "%s" with frames: %s' % 
+                     (tiledata['Name'], coordlist)
+               )
+               tileset.prototiles.append( ProtoTile(
+                  tileset, coordlist, tiledata['Resistance']
+               ) )
+               
+      except:
+         self.logger.error( 'Unable to load tileset %s!' % tilesetpath )
 
