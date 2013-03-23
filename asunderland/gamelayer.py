@@ -20,6 +20,11 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 import pygame
 from threading import Thread, Lock
 
+UP = 'UP'
+DOWN = 'DOWN'
+RIGHT = 'RIGHT'
+LEFT = 'LEFT'
+
 class InputLayer( Thread ):
 
    ''' This class runs constantly in the background and tries to make the other
@@ -96,6 +101,14 @@ def key_decode( event_key_in ):
    elif 33 <= event_key_in and 126 >= event_key_in:
       # Printable characters.
       return pygame.key.name( event_key_in )
+   elif 273 == event_key_in:
+      return UP
+   elif 274 == event_key_in:
+      return DOWN
+   elif 275 == event_key_in:
+      return RIGHT
+   elif 276 == event_key_in:
+      return LEFT
    else:
       return None
 
