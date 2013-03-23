@@ -18,8 +18,5 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 class NetClient():
-   gamelayer = None
-
-   def __init__( self, gamelayer_in ):
-      self.gamelayer = gamelayer_in
+   pass
 
