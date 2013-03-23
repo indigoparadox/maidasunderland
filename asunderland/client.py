@@ -42,6 +42,7 @@ class ClientEngine():
    logger = None
    client = None
    connection = None
+   channel = ''
 
    def __init__( self, configdata, graphicslayer ):
       self.logger = logging.getLogger( 'asunderland.clientengine' )
@@ -50,8 +51,8 @@ class ClientEngine():
 
    def connect(
       self,
+      channel,
       serveraddress=("localhost", server.DEFAULT_PORT),
-      channel='#lobby',
       client=None,
       connect=None
    ):
@@ -64,17 +65,19 @@ class ClientEngine():
       connection.'''
 
       if None == client or None == connection:
+         print serveraddress
          self.serveraddress = serveraddress
          self.logger.info(
             'Connecting to %s on port %d...' % self.serveraddress
          )
+         self.channel = channel
          self.client = AsunderlandIRCClient()
          self.connection = self.client.server().connect(
             serveraddress[0],
             serveraddress[1],
             'tester' # FIXME
          )
-         self.connection.join( channel )
+         self.connection.join( self.channel )
       else:
          # Preserve a pre-existing client connection.
          pass
@@ -111,12 +114,12 @@ class ClientAdventure( ClientEngine ):
 
    def connect(
       self,
+      channel,
       serveraddress=("localhost", server.DEFAULT_PORT),
-      channel='#lobby',
       client=None,
       connect=None
    ):
-      ClientEngine.connect( self, serveraddress, channel, client, connect )
+      ClientEngine.connect( self, channel, serveraddress, client, connect )
 
       # Load the map from the channel topic.
       self.connection.add_global_handler( 'topic', self.on_topic )
@@ -136,7 +139,8 @@ class ClientAdventure( ClientEngine ):
          pass
 
    def process_key( self, key_char_in ):
-      print 'Adventure' + key_char_in
+      #self.connection.privmsg( self.channel, key_char_in )
+      self.connection.send_raw( 'MOVEMENT %s' % key_char_in )
 
    def load_map( self, mapname ):
       #try:
@@ -159,6 +163,8 @@ class ClientAdventure( ClientEngine ):
       self.running = True
       while self.running:
 
+         # Loop maintenance.
+         self.client.process_once()
          self.graphicslayer.screen_flip()
          gamelayer.sleep( 100 )
 

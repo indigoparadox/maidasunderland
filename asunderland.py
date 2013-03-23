@@ -77,7 +77,7 @@ def main():
             server.AsunderlandIRCClientHandler
          )
          Thread( target=my_server.serve_forever ).start()
-         my_engine.connect()
+         my_engine.connect( '#lobby' )
 
       # Delegate the main loop to the engine we've built.
       my_engine = my_engine.loop()
