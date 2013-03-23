@@ -17,6 +17,13 @@ You should have received a copy of the GNU General Public License
 along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+from irc import server as irc_server
+
+class ServerClientHandler( irc_server.IRCClient ):
+   def handle_away( self, params ):
+      # TODO: Implement some kind of sleep bubble.
+      pass
+
 class ServerEngine():
    pass
 
