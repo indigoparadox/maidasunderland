@@ -24,18 +24,23 @@ class ServerEngine():
 
 class ClientEngine():
    graphicslayer = None
+   netclient = None
    running = False
 
-   def __init__( self, graphicslayer ):
+   def __init__( self, graphicslayer, netclient=None ):
       self.graphicslayer = graphicslayer
+      self.netclient = netclient
 
-class EngineTitle( ClientEngine, ServerEngine ):
+class EngineTitle( ClientEngine ):
 
    ''' This engine should be somewhat unique in that it has no real server
    component. All state is handled within the engine module.
 
    It should just display a pretty menu from which options relevant to starting
    the game proper may be selected. '''
+
+   def process_key( self, key_char_in ):
+      print key_char_in
 
    def loop( self ):
       self.running = True
@@ -44,4 +49,7 @@ class EngineTitle( ClientEngine, ServerEngine ):
 
          self.graphicslayer.screen_flip()
          gamelayer.sleep( 100 )
+
+class EngineAdventure( ClientEngine ):
+   pass
 

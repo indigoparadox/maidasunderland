@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+import os
 from asunderland import *
 from yaml import load, dump
 try:
@@ -25,6 +26,10 @@ except ImportError:
    from yaml import Loader, Dumper
 
 def main():
+   # If there's a data directory, descend into it.
+   if os.path.isdir( 'data' ):
+      os.chdir( 'data' )
+
    # Read configuration.
    config_data = None
    try:

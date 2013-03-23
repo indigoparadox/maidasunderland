@@ -44,6 +44,8 @@ class InputLayer( Thread ):
          elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                self.engine.running = False
+            elif None != key_decode( event.key ):
+               self.engine.process_key( key_decode( event.key ) )
 
 class GraphicsLayer():
    config_data = None
@@ -81,4 +83,19 @@ class GraphicsLayer():
 
 def sleep( sleep_us ):
    pygame.time.wait( sleep_us )
+
+def key_decode( event_key_in ):
+   
+   ''' Given the result of a key event, this should return the character it
+   produces, or a special abstract wrapper constant for non-letters/numbers.
+   '''
+   
+   if 32 == event_key_in:
+      # Pygame wants to call this "space".
+      return ' '
+   elif 33 <= event_key_in and 126 >= event_key_in:
+      # Printable characters.
+      return pygame.key.name( event_key_in )
+   else:
+      return None
 
