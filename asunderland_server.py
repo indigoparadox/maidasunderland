@@ -24,16 +24,17 @@ from asunderland import server as as_server
 
 def main():
    #parser = argparse.ArgumentParser()
-   #options = parser.parse_args()
+   #args = parser.parse_args()
 
    logging.basicConfig()
 
-   ## Quick and dirty. Just start a crude IRC server for now. We'll bolt it on
-   ## tothe game engine later.
+   # Quick and dirty. Just start a crude IRC server for now. We'll bolt it on
+   # tothe game engine later.
    my_server = irc_server.IRCServer(
       ("", 6300), as_server.ServerClientHandler
    )
    my_server.serve_forever()
+   logging.shutdown()
 
 if __name__ == '__main__':
    main()
