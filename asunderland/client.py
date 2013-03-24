@@ -19,7 +19,7 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 
 import gamelayer
 import server
-import tilemap
+import pytmx
 import logging
 import re
 import os
@@ -144,16 +144,10 @@ class ClientAdventure( ClientEngine ):
 
    def load_map( self, mapname ):
       #try:
-      # Load the map data file.
+      # TODO: Load the map data file.
       mappath = os.path.join( 'maps', mapname + '.yaml' )
       self.logger.info( 'Attempting to load map %s...' %  mappath )
-      with open( mappath, 'r' ) as mapfile:
-         
-         mapdata = load( mapfile )
-
-         self.gamemap = tilemap.TileMap()
-         for tileset in mapdata['Tilesets']:
-            self.gamemap.load_tileset( tileset )
+      self.gamemap = 'REPLACEME'
 
       #except:
       #   # TODO: Set the map to a default or random map or something?
