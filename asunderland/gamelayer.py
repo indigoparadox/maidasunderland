@@ -101,6 +101,9 @@ def sleep( sleep_us ):
 def load_image( image_path_in ):
    return pygame.image.load( image_path_in )
 
+def size_image( image_in ):
+   return (image_in.get_width(), image_in.get_height())
+
 def key_decode( event_key_in ):
    
    ''' Given the result of a key event, this should return the character it

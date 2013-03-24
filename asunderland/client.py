@@ -90,6 +90,14 @@ class ClientEngine():
          # Preserve a pre-existing client connection.
          pass
 
+   def set_viewport( self, x, y ):
+      self.viewport = (
+         x, y,
+         self.viewport[2],
+         self.viewport[3]
+      )
+      
+
 class ClientTitle( ClientEngine ):
 
    ''' This engine should be somewhat unique in that it has no real server
@@ -117,6 +125,7 @@ class ClientTitle( ClientEngine ):
 class ClientAdventure( ClientEngine ):
    gamemap = None
    tileviewport = None
+   tilesize = (0, 0)
 
    def __init__( self, configdata, graphicslayer ):
       ClientEngine.__init__( self, configdata, graphicslayer )
@@ -160,18 +169,32 @@ class ClientAdventure( ClientEngine ):
          # TODO: Should this be abstracted, since it kind of relies on PyGame?
          self.gamemap = pytmx.tmxloader.load_pygame( mappath )
 
-         # Setup the tile viewport based on map properties.
-         self.tileviewport = (
-            self.viewport[0],
-            self.viewport[1],
-            self.viewport[2] / self.gamemap.tilesets[0].tilewidth,
-            self.viewport[3] / self.gamemap.tilesets[0].tileheight
-         )
+         # Make sure the tile layers are homogenous.
+         self.tilesize = (self.gamemap.tilesets[0].tilewidth,
+            self.gamemap.tilesets[0].tileheight)
+         for tileset in self.gamemap.tilesets:
+            if self.tilesize[0] != tileset.tilewidth: 
+               raise Exception( 'Tile width mismatches!' )
+            elif self.tilesize[1] != tileset.tileheight:
+               raise Exception( 'Tile height mismatches!' )
       except:
          # TODO: Set the map to a default or random map or something?
          self.logger.error(
             'Unable to load map "%s".' % mappath
          )
+
+      self.set_viewport( 0, 0 )
+
+   def set_viewport( self, x, y ):
+      ClientEngine.set_viewport( self, x, y )
+
+      # Setup the tile viewport based on map properties.
+      self.tileviewport = (
+         self.viewport[0],
+         self.viewport[1],
+         self.viewport[2] / self.gamemap.tilesets[0].tilewidth,
+         self.viewport[3] / self.gamemap.tilesets[0].tileheight
+      )
 
    def loop( self ):
       self.running = True
@@ -180,21 +203,21 @@ class ClientAdventure( ClientEngine ):
          # TODO: Render layers. Likely: L1/L2 alternating first as animation,
          #       then sprites and objects, then M1/M2 midway through them
          #       (e.g. for standing in grass), then H1/H2 above them.
-         layer = 0
-         layertilewidth = self.gamemap.tilesets[layer].tilewidth
-         layertileheight = self.gamemap.tilesets[layer].tileheight
-         for column in range( self.tileviewport[0], self.tileviewport[2] ):
-            #screeny = row * layertilewidth 
+         for layer in range( len( self.gamemap.tilelayers ) ):
             for row in range( self.tileviewport[1], self.tileviewport[3] ):
-               self.graphicslayer.screen_blit(
-                  self.gamemap.getTileImage( column, row, layer ),
-                  destrect=(
-                     (column * layertilewidth) - self.viewport[0],
-                     (row * layertileheight) - self.viewport[1],
-                     layertilewidth,
-                     layertileheight
-                  )
-               )
+               for column in \
+               range( self.tileviewport[0], self.tileviewport[2] ):
+                  # Some layers may be missing tiles.
+                  try:
+                     self.graphicslayer.screen_blit(
+                        self.gamemap.getTileImage( column, row, layer ),
+                        destrect=(
+                           (column * self.tilesize[0]) - self.viewport[0],
+                           (row * self.tilesize[1]) - self.viewport[1]
+                        )
+                     )
+                  except:
+                     pass
 
          # Loop maintenance.
          self.client.process_once()
