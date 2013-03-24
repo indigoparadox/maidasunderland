@@ -53,19 +53,19 @@ class InputLayer( Thread ):
                self.engine.process_key( key_decode( event.key ) )
 
 class GraphicsLayer():
-   config_data = None
+   configdata = None
    window = None
 
-   def __init__( self, config_data_in ):
-      self.config_data = config_data_in
+   def __init__( self, configdata_in ):
+      self.configdata = configdata_in
 
    def start( self ):
       pygame.init()
       self.window = pygame.display.set_mode(
-          (self.config_data['Options']['WindowWidth'],
-         self.config_data['Options']['WindowHeight'])
+          (self.configdata['Options']['WindowWidth'],
+         self.configdata['Options']['WindowHeight'])
       )
-      pygame.display.set_caption( self.config_data['Title'] )
+      pygame.display.set_caption( self.configdata['Title'] )
 
    def quit( self ):
       pygame.quit()
@@ -73,10 +73,19 @@ class GraphicsLayer():
    def events_poll( self ):
       pass
 
+   def screen_blit(
+      self, sourceimage, destimage=None, sourcerect=None, destrect=None
+   ):
+      if None == destimage:
+         destimage = self.window
+
+      # TODO: If source rect and dest rect don't match then scale them.
+      destimage.blit( sourceimage, destrect )      
+
    def screen_blank( self, color=(0, 0, 0) ):
       mask = pygame.Surface(
-         (self.config_data['Options']['WindowWidth'],
-            self.config_data['Options']['WindowHeight']),
+         (self.configdata['Options']['WindowWidth'],
+            self.configdata['Options']['WindowHeight']),
          pygame.SRCALPHA
       )
       mask.fill( color )
