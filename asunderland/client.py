@@ -43,11 +43,19 @@ class ClientEngine():
    client = None
    connection = None
    channel = ''
+   viewport = (0, 0, 0, 0)
 
    def __init__( self, configdata, graphicslayer ):
       self.logger = logging.getLogger( 'asunderland.clientengine' )
       self.configdata = configdata
       self.graphicslayer = graphicslayer
+
+      # Viewport format is (X, Y, Width, Height).
+      self.viewport = (
+         0, 0,
+         self.configdata['Options']['WindowWidth'],
+         self.configdata['Options']['WindowHeight']
+      )
 
    def connect(
       self,
@@ -108,6 +116,7 @@ class ClientTitle( ClientEngine ):
 
 class ClientAdventure( ClientEngine ):
    gamemap = None
+   tileviewport = None
 
    def __init__( self, configdata, graphicslayer ):
       ClientEngine.__init__( self, configdata, graphicslayer )
@@ -143,19 +152,49 @@ class ClientAdventure( ClientEngine ):
       self.connection.send_raw( 'MOVEMENT %s' % key_char_in )
 
    def load_map( self, mapname ):
-      #try:
-      # TODO: Load the map data file.
-      mappath = os.path.join( 'maps', mapname + '.yaml' )
-      self.logger.info( 'Attempting to load map %s...' %  mappath )
-      self.gamemap = 'REPLACEME'
+      try:
+         # Load the map data file.
+         mappath = os.path.join( 'maps', mapname + '.tmx' )
+         self.logger.info( 'Attempting to load map "%s"...' % mappath )
 
-      #except:
-      #   # TODO: Set the map to a default or random map or something?
-      #   pass
+         # TODO: Should this be abstracted, since it kind of relies on PyGame?
+         self.gamemap = pytmx.tmxloader.load_pygame( mappath )
+
+         # Setup the tile viewport based on map properties.
+         self.tileviewport = (
+            self.viewport[0],
+            self.viewport[1],
+            self.viewport[2] / self.gamemap.tilesets[0].tilewidth,
+            self.viewport[3] / self.gamemap.tilesets[0].tileheight
+         )
+      except:
+         # TODO: Set the map to a default or random map or something?
+         self.logger.error(
+            'Unable to load map "%s".' % mappath
+         )
 
    def loop( self ):
       self.running = True
       while self.running:
+         
+         # TODO: Render layers. Likely: L1/L2 alternating first as animation,
+         #       then sprites and objects, then M1/M2 midway through them
+         #       (e.g. for standing in grass), then H1/H2 above them.
+         layer = 0
+         layertilewidth = self.gamemap.tilesets[layer].tilewidth
+         layertileheight = self.gamemap.tilesets[layer].tileheight
+         for column in range( self.tileviewport[0], self.tileviewport[2] ):
+            #screeny = row * layertilewidth 
+            for row in range( self.tileviewport[1], self.tileviewport[3] ):
+               self.graphicslayer.screen_blit(
+                  self.gamemap.getTileImage( column, row, layer ),
+                  destrect=(
+                     (column * layertilewidth) - self.viewport[0],
+                     (row * layertileheight) - self.viewport[1],
+                     layertilewidth,
+                     layertileheight
+                  )
+               )
 
          # Loop maintenance.
          self.client.process_once()
