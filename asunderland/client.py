@@ -31,6 +31,10 @@ try:
 except ImportError:
    from yaml import Loader, Dumper
 
+DEFAULT_ADVENTURE_MAP = 'Farm'
+
+MAP_PROCESS_TIMEOUT = 10
+
 class AsunderlandIRCClient( irc_client.IRC ):
    pass
 
@@ -139,13 +143,20 @@ class ClientAdventure( ClientEngine ):
    ):
       ClientEngine.connect( self, channel, serveraddress, client, connect )
 
-      # Load the map from the channel topic.
+      # Load the map from the channel topic if we can.
       self.connection.add_global_handler( 'topic', self.on_topic )
-      #Thread( target=self.client.process_forever ).start()
-      # TODO: Set a limit so that we quit if we fail to receive a map
-      #       within a certain number of iterations or something?
-      while None == self.gamemap:
+      process = 0
+      while None == self.gamemap and process < MAP_PROCESS_TIMEOUT:
          self.client.process_once()
+         process += 1
+
+      if None == self.gamemap:
+         # Set the map to a default map.
+         self.logger.error( 'No topic received.' )
+         self.logger.info(
+            'Falling back to default map "%s"', DEFAULT_ADVENTURE_MAP
+         )
+         self.load_map( DEFAULT_ADVENTURE_MAP )
 
    def on_topic( self, connection, event ):
       # Attempt to grab the map name from the channel topic.
@@ -153,8 +164,12 @@ class ClientAdventure( ClientEngine ):
       if None != match_map.groups():
          self.load_map( match_map.groups()[0] )
       else:
-         # TODO: Set the map to a default or random map or something?
-         pass
+         # Set the map to a default map.
+         self.logger.error( 'No map specified in topic.' )
+         self.logger.info(
+            'Falling back to default map "%s"', DEFAULT_ADVENTURE_MAP
+         )
+         self.load_map( DEFAULT_ADVENTURE_MAP )
 
    def process_key( self, key_char_in ):
       #self.connection.privmsg( self.channel, key_char_in )
@@ -182,6 +197,10 @@ class ClientAdventure( ClientEngine ):
          self.logger.error(
             'Unable to load map "%s".' % mappath
          )
+         self.logger.info(
+            'Falling back to default map "%s"', DEFAULT_ADVENTURE_MAP
+         )
+         self.load_map( DEFAULT_ADVENTURE_MAP )
 
       self.set_viewport( 0, 0 )
 
