@@ -29,11 +29,13 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
       print params
 
    def handle_who( self, params ):
-      # TODO
+      # TODO: List users in the specified room.
       pass
 
    def handle_whois( self, params ):
-      # TODO
+      # TODO: Implement extension to give engine-specific actor information
+      #       (e.g. sprite/location for adventure engine) for the specified IRC
+      #       user so the client can display it.
       pass
 
    def handle_away( self, params ):

@@ -17,3 +17,7 @@ You should have received a copy of the GNU General Public License
 along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+class Mobile:
+
+   maplocation = (0, 0)
+
