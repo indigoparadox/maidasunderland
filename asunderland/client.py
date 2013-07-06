@@ -87,15 +87,27 @@ class ClientEngine():
          )
          self.channel = channel
          self.client = AsunderlandIRCClient()
-         my_server = self.connection = self.client.server()
+         my_server = self.client.server()
          # TODO: Implement trusted CA?
          ssl_wrapper = functools.partial( ssl.wrap_socket )
-         my_server.connect(
+         self.connection = my_server.connect(
             serveraddress[0],
             serveraddress[1],
             'tester', # FIXME
             connect_factory = irc.connection.Factory( wrapper=ssl_wrapper )
          )
+         # TODO: Handle failed connection.
+         self.logger.info(
+            'SSL peer name: ' + str( self.connection.socket.getpeername() )
+         )
+         self.logger.info(
+            'SSL cipher: ' + str( self.connection.socket.cipher() )
+         )
+         self.logger.info(
+            'SSL certificate: ' +
+               str( self.connection.socket.getpeercert() )
+         )
+         #print vars( self.connection.socket )
          self.connection.join( self.channel )
       else:
          # Preserve a pre-existing client connection.
