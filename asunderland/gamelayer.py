@@ -18,12 +18,15 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import pygame
+import logging
 from threading import Thread, Lock
 
 UP = 'UP'
 DOWN = 'DOWN'
 RIGHT = 'RIGHT'
 LEFT = 'LEFT'
+
+MAXLOGFRAMES = 100
 
 class InputLayer( Thread ):
 
@@ -55,9 +58,15 @@ class InputLayer( Thread ):
 class GraphicsLayer():
    configdata = None
    window = None
+   dirtyrects = []
+   logger = None
+   clock = None
+   logframes = 0
 
    def __init__( self, configdata_in ):
       self.configdata = configdata_in
+      self.logger = logging.getLogger( 'asunderland.gamelayer' )
+      self.clock = pygame.time.Clock()
 
    def start( self ):
       pygame.init()
@@ -76,8 +85,26 @@ class GraphicsLayer():
    def screen_blit(
       self, sourceimage, destimage=None, sourcerect=None, destrect=None
    ):
+   
+      ''' Blit the given image to the screen.
+
+      sourcerect/destrect should be 4-tuples in the format 
+         (left,top,width,height). '''
+
+      if None == destrect:
+         self.logger.error( 'Invalid destrect specified. Aborting.' )
+         return
+
       if None == destimage:
          destimage = self.window
+
+      # Add anything blitted to the list of dirty rectangles.
+      self.dirtyrects.append( pygame.Rect(
+         destrect[0],
+         destrect[1],
+         destrect[2],
+         destrect[3]
+      ) )
 
       # TODO: If source rect and dest rect don't match then scale them.
       destimage.blit( sourceimage, destrect )      
@@ -92,8 +119,25 @@ class GraphicsLayer():
       mask.set_alpha( 255 )
       self.window.blit( mask, (0, 0) )
 
+      # Mark the whole screen as dirty.
+      self.dirtyrects.append( pygame.Rect(
+         0,
+         0,
+         self.configdata['Options']['WindowWidth'],
+         self.configdata['Options']['WindowHeight']
+      ) )
+
    def screen_flip( self ):
-      pygame.display.flip()
+      pygame.display.update( self.dirtyrects )
+      self.dirtyrects = []
+      
+      self.clock.tick_busy_loop( 60 )
+      
+      # Display the FPS counter to the debug log.
+      self.logframes += 1
+      if MAXLOGFRAMES <= self.logframes:
+         self.logger.debug( 'FPS: ' + str( self.clock.get_fps() ) )
+         self.logframes = 0
 
 def sleep( sleep_us ):
    pygame.time.wait( sleep_us )

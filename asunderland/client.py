@@ -77,13 +77,14 @@ class ClientEngine():
       connection.'''
 
       if None == client or None == connection:
-         print serveraddress
+         self.logger.info( serveraddress )
          self.serveraddress = serveraddress
          self.logger.info(
             'Connecting to %s on port %d...' % self.serveraddress
          )
          self.channel = channel
          self.client = AsunderlandIRCClient()
+         # TODO: Add support for SSL using connect_factory.
          self.connection = self.client.server().connect(
             serveraddress[0],
             serveraddress[1],
@@ -115,7 +116,7 @@ class ClientTitle( ClientEngine ):
 
    def loop( self ):
       self.running = True
-      print "Press any key to continue..."
+      self.logger.info( "Press any key to continue..." )
       while self.running:
          self.graphicslayer.screen_blank( (255, 255, 255) )
 
@@ -127,12 +128,25 @@ class ClientTitle( ClientEngine ):
       return client_out
 
 class ClientAdventure( ClientEngine ):
+
+   ''' A tile-based hack-and-slash adventure mode. '''
+
+   # TODO: At some point, maybe define a ClientTilemap class that inherits from
+   #       ClientEngine and then have ClientAdventure inherit from that, thus
+   #       allowing for tilemap-based engines that aren't adventure games, like
+   #       strategy games or similar.
+
    gamemap = None
    tileviewport = None
    tilesize = (0, 0)
+   tilesmoving = False # Flag to signal redraw of static tiles.
+   mobiles = []
 
    def __init__( self, configdata, graphicslayer ):
       ClientEngine.__init__( self, configdata, graphicslayer )
+
+      # TODO: Fetch list of mobiles with /who, iterating with /whois for each
+      #       one to find sprite/location.
 
    def connect(
       self,
@@ -152,7 +166,7 @@ class ClientAdventure( ClientEngine ):
 
       if None == self.gamemap:
          # Set the map to a default map.
-         self.logger.error( 'No topic received.' )
+         self.logger.warn( 'No topic received.' )
          self.logger.info(
             'Falling back to default map "%s"', DEFAULT_ADVENTURE_MAP
          )
@@ -192,6 +206,9 @@ class ClientAdventure( ClientEngine ):
                raise Exception( 'Tile width mismatches!' )
             elif self.tilesize[1] != tileset.tileheight:
                raise Exception( 'Tile height mismatches!' )
+
+         # Mark the tiles as undrawn on load so they'll be drawn at least once.
+         self.tilesmoving = True
       except:
          # TODO: Set the map to a default or random map or something?
          self.logger.error(
@@ -215,31 +232,61 @@ class ClientAdventure( ClientEngine ):
          self.viewport[3] / self.gamemap.tilesets[0].tileheight
       )
 
+   def render_layer( self, layer_index ):
+      for row in range( self.tileviewport[1], self.tileviewport[3] ):
+         for column in \
+         range( self.tileviewport[0], self.tileviewport[2] ):
+            # Some layers may be missing tiles.
+            try:
+               self.graphicslayer.screen_blit(
+                  self.gamemap.getTileImage( column, row, layer_index ),
+                  destrect=(
+                     (column * self.tilesize[0]) - self.viewport[0],
+                     (row * self.tilesize[1]) - self.viewport[1],
+                     self.tilesize[0],
+                     self.tilesize[1]
+                  )
+               )
+            except:
+               pass
+
    def loop( self ):
       self.running = True
       while self.running:
+
+         self.client.process_once()
          
          # TODO: Render layers. Likely: L1/L2 alternating first as animation,
          #       then sprites and objects, then M1/M2 midway through them
          #       (e.g. for standing in grass), then H1/H2 above them.
-         for layer in range( len( self.gamemap.tilelayers ) ):
-            for row in range( self.tileviewport[1], self.tileviewport[3] ):
-               for column in \
-               range( self.tileviewport[0], self.tileviewport[2] ):
-                  # Some layers may be missing tiles.
-                  try:
-                     self.graphicslayer.screen_blit(
-                        self.gamemap.getTileImage( column, row, layer ),
-                        destrect=(
-                           (column * self.tilesize[0]) - self.viewport[0],
-                           (row * self.tilesize[1]) - self.viewport[1]
-                        )
-                     )
-                  except:
-                     pass
+
+         # TODO: Only render tiles that have been changed recently (either by
+         #       viewport movement or a mobile walking on/over them).
+
+         if self.tilesmoving:
+            # Lower layer (below player).
+            self.render_layer( 0 )
+
+         if self.tilesmoving:
+            # TODO: Middle layer upper-half (below player).
+            self.render_layer( 1 )
+
+         # TODO: Ground mobiles.
+
+         if self.tilesmoving:
+            # TODO: Middle layer lower-half (above player).
+            self.render_layer( 1 )
+
+         if self.tilesmoving:
+            # Upper layer (above player).
+            self.render_layer( 2 )
+
+         # TODO: Sky mobiles.
+
+         if self.tilesmoving:
+            self.tilesmoving = False
 
          # Loop maintenance.
-         self.client.process_once()
          self.graphicslayer.screen_flip()
-         gamelayer.sleep( 100 )
+         #gamelayer.sleep( 100 )
 
