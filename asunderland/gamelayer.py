@@ -99,7 +99,7 @@ def sleep( sleep_us ):
    pygame.time.wait( sleep_us )
 
 def load_image( image_path_in ):
-   return pygame.image.load( image_path_in )
+   return pygame.image.load( image_path_in ).convert()
 
 def size_image( image_in ):
    return (image_in.get_width(), image_in.get_height())
