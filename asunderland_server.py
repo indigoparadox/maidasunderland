@@ -31,7 +31,7 @@ def main():
    # Quick and dirty. Just start a crude IRC server for now. We'll bolt it on
    # tothe game engine later.
    my_server = irc_server.IRCServer(
-      ("", 6300), as_server.ServerClientHandler
+      ("", 6300), as_server.AsunderlandIRCClientHandler
    )
    my_server.serve_forever()
    logging.shutdown()

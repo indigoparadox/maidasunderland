@@ -23,8 +23,11 @@ import pytmx
 import logging
 import re
 import os
+import ssl
+import functools
+import irc.connection
+import irc.client
 from threading import Thread
-from irc import client as irc_client
 from yaml import load, dump
 try:
    from yaml import CLoader as Loader, CDumper as Dumper
@@ -35,7 +38,7 @@ DEFAULT_ADVENTURE_MAP = 'Farm'
 
 MAP_PROCESS_TIMEOUT = 10
 
-class AsunderlandIRCClient( irc_client.IRC ):
+class AsunderlandIRCClient( irc.client.IRC ):
    pass
 
 class ClientEngine():
@@ -84,11 +87,14 @@ class ClientEngine():
          )
          self.channel = channel
          self.client = AsunderlandIRCClient()
-         # TODO: Add support for SSL using connect_factory.
-         self.connection = self.client.server().connect(
+         my_server = self.connection = self.client.server()
+         # TODO: Implement trusted CA?
+         ssl_wrapper = functools.partial( ssl.wrap_socket )
+         my_server.connect(
             serveraddress[0],
             serveraddress[1],
-            'tester' # FIXME
+            'tester', # FIXME
+            connect_factory = irc.connection.Factory( wrapper=ssl_wrapper )
          )
          self.connection.join( self.channel )
       else:
