@@ -44,6 +44,8 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
       # TODO: Determine the player's current location on their map and if there
       #       are any collisions. Respond to the client with their new position.
 
+      # TODO: Don't allow/propagate walking "too fast".
+
       if None != self.actor:
          propagate = False
 

@@ -180,8 +180,8 @@ class ClientTitle( ClientEngine ):
    def loop( self ):
       self.running = True
       log.info( "Press any key to continue..." )
+      self.graphicslayer.screen_blank( (255, 255, 255) )
       while self.running:
-         self.graphicslayer.screen_blank( (255, 255, 255) )
 
          self.graphicslayer.screen_flip()
          gamelayer.sleep( 100 )
@@ -253,17 +253,28 @@ class ClientAdventure( ClientEngine ):
       
       # Try to find the specified actor in our list and mark their tile as
       # dirty in advance, since it's probably going to be different soon.
-      dirty_old_coords = None
+      old_coords = None
       dirty_actor = self.actors.get( event.arguments[1] )
       if None != dirty_actor:
-         self.tilesdirty.append( tuple( dirty_actor.maptilecoords ) )
+         old_coords = tuple( dirty_actor.maptilecoords )
+         self.tilesdirty.append( old_coords )
 
       ClientEngine.on_whoisuser( self, connection, event )
 
-      dirty_old_coords = None
+      new_coords = None
       dirty_actor = self.actors.get( event.arguments[1] )
       if None != dirty_actor:
-         self.tilesdirty.append( tuple( dirty_actor.maptilecoords ) )
+         new_coords = tuple( dirty_actor.maptilecoords )
+         self.tilesdirty.append( new_coords )
+
+      # If we moved somewhere then set the walk offset for drawing to enable
+      # the "gliding" effect instead of "blinking" from place to place.
+      if None != old_coords and None != new_coords:
+         dirty_actor.walkoffset = tuple( (
+            (old_coords[0] - new_coords[0]) * self.tilesize[0],
+            (old_coords[1] - new_coords[1]) * self.tilesize[1]
+         ) )
+         dirty_actor.walkoldtilecoords.append( old_coords )
 
    def process_key( self, key_char_in ):
       #self.connection.privmsg( self.channel, key_char_in )
@@ -316,17 +327,25 @@ class ClientAdventure( ClientEngine ):
          self.viewport[3] / self.gamemap.tilesets[0].tileheight
       )
 
-   def _render_mobile( self, coords, mobile_actor ):
+   def _render_mobile( self, coords, mobile_actor, cliprect=None ):
+
+      if None != cliprect:
+         renderrect = tuple(
+            x - y for x, y in zip( mobile_actor.get_framerect(), cliprect )
+         )
+      else:
+         renderrect = mobile_actor.get_framerect()
+
       self.graphicslayer.screen_blit(
          mobile_actor.spriteimage,
-         sourcerect=mobile_actor.get_framerect(),
+         sourcerect=renderrect,
          destrect=(
             (mobile_actor.maptilecoords[0] * self.tilesize[0]) 
-               - self.viewport[0],
+               - self.viewport[0] + mobile_actor.walkoffset[0],
             (mobile_actor.maptilecoords[1] * self.tilesize[1]) 
-               - self.viewport[1],
-            self.tilesize[0],
-            self.tilesize[1]
+               - self.viewport[1] + mobile_actor.walkoffset[1],
+            renderrect[2],
+            renderrect[3]
          )
       )
 
@@ -362,30 +381,32 @@ class ClientAdventure( ClientEngine ):
       self._render_tile_layer( coords, 0 )
 
       # Middle layer upper-half (below mobiles).
-      self._render_tile_layer(
-         coords, 1, sourcerect=(0, 0, self.tilesize[0], self.tilesize[1] / 2),
-      )
+      self._render_tile_layer( coords, 1 )
 
       # Ground mobiles.
       for actor_key in self.actors.keys():
-         self._render_mobile( coords, self.actors[actor_key] )
-
-      # Middle layer lower-half (above mobiles).
-      self._render_tile_layer(
-         coords, 1,
-         sourcerect=(
-            0,
-            self.tilesize[1] / 2,
-            self.tilesize[0],
-            self.tilesize[1]
-         ),
-         destoffset=( 0, self.tilesize[1] / 2, 0, 0 )
-      )
+         if 0 != self.gamemap.getTileGID( coords[0], coords[1], 1 ):
+            # We're wading through something in the middle layer, so cut the
+            # render in half.
+            self._render_mobile(
+               coords,
+               self.actors[actor_key],
+               cliprect=(
+                  0, 0, 0, self.tilesize[1] / 2
+               )
+            )
+         else:
+            self._render_mobile( coords, self.actors[actor_key] )
 
       # Upper layer (above mobiles).
       self._render_tile_layer( coords, 2 )
 
       # TODO: Sky mobiles.
+
+      print coords
+
+      #coords_index = self.tilesdirty.index( coords )
+      #del self.tilesdirty[coords_index]
 
    def loop( self ):
       self.running = True
@@ -399,12 +420,16 @@ class ClientAdventure( ClientEngine ):
 
          for actor_key in self.actors.keys():
             # This will mark the mobile's tile as dirty, too.
-            self.actors[actor_key].animate( self )
+            self.actors[actor_key].animate_tile( self )
 
          # Render dirty tiles.
-         for dirty_coords in self.tilesdirty:
-            self.render_tile( dirty_coords )
-         self.tilesdirty = []
+         #for dirty_coords in self.tilesdirty:
+         #   self.render_tile( dirty_coords )
+         try:
+            self.render_tile( self.tilesdirty[0] )
+            del self.tilesdirty[0:len( self.tilesdirty )]
+         except:
+            pass
             
          # Loop maintenance.
          self.graphicslayer.screen_flip()
