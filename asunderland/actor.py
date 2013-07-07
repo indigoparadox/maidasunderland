@@ -75,8 +75,10 @@ class Actor:
          self.walkoffset = (new_x, new_y)
 
          # Make sure the old tiles get redrawn.
-         for oldtile in self.walkoldtilecoords:
-            engine.tilesdirty.append( oldtile )
+         # XXX: This seems to append an increasing number of tiles with each
+         #      call.
+         #for oldtile in self.walkoldtilecoords:
+         #   engine.tilesdirty.append( oldtile )
       elif 0 < len( self.walkoldtilecoords ):
          self.walkoldtilecoords = []
 

@@ -32,13 +32,15 @@ except ImportError:
 def main():
    parser = argparse.ArgumentParser()
    parser.add_argument(
-      '-d', '--debug', action='store_true', dest='debug',
-      help='Display debug/info messages on stdout.'
+      '-v', '--verbosity', action='store', dest='debug',
+      help='Display (d)ebug/(i)nfo messages on stdout.'
    )
    args = parser.parse_args()
 
-   if args.debug:
+   if 'd' == args.debug:
       logging.basicConfig( level=logging.DEBUG )
+   if 'i' == args.debug:
+      logging.basicConfig( level=logging.INFO )
    else:
       logging.basicConfig()
 
