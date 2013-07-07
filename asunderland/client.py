@@ -403,8 +403,6 @@ class ClientAdventure( ClientEngine ):
 
       # TODO: Sky mobiles.
 
-      print coords
-
       #coords_index = self.tilesdirty.index( coords )
       #del self.tilesdirty[coords_index]
 
@@ -422,14 +420,20 @@ class ClientAdventure( ClientEngine ):
             # This will mark the mobile's tile as dirty, too.
             self.actors[actor_key].animate_tile( self )
 
+         log.debug( 'Beginning render cycle.' )
+
          # Render dirty tiles.
-         #for dirty_coords in self.tilesdirty:
-         #   self.render_tile( dirty_coords )
-         try:
-            self.render_tile( self.tilesdirty[0] )
-            del self.tilesdirty[0:len( self.tilesdirty )]
-         except:
-            pass
+         for dirty_coords in self.tilesdirty:
+            log.debug( 'Rendering dirty tile {}'.format( dirty_coords ) )
+            self.render_tile( dirty_coords )
+         del self.tilesdirty[0:len( self.tilesdirty )]
+
+         # DEBUG:
+         #try:
+         #   self.render_tile( self.tilesdirty[0] )
+         #   del self.tilesdirty[0:len( self.tilesdirty )]
+         #except:
+         #   pass
             
          # Loop maintenance.
          self.graphicslayer.screen_flip()
