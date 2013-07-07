@@ -116,7 +116,7 @@ class ClientEngine():
 
          self.connection.add_global_handler( 'join', self.on_join )
          self.connection.add_global_handler( 'part', self.on_part )
-         self.connection.add_global_handler( 'adminloc1', self.on_adminloc1 )
+         self.connection.add_global_handler( 'whoisuser', self.on_whoisuser )
          # TODO: Handle nick changes and the actors list.
 
          # TODO: Send a real actor command with parameters.
@@ -136,7 +136,7 @@ class ClientEngine():
    def on_part( self, connection, event ):
       pass
 
-   def on_adminloc1( self, connection, event ):
+   def on_whoisuser( self, connection, event ):
       # This is probably pretty rude, but take actor data slipped in in
       # response to a WHOIS request and append it to the actors list.
       jdata_string = ' '.join( event.arguments[2:] )
@@ -249,7 +249,7 @@ class ClientAdventure( ClientEngine ):
          )
          self.load_map( DEFAULT_ADVENTURE_MAP )
 
-   def on_adminloc1( self, connection, event ):
+   def on_whoisuser( self, connection, event ):
       
       # Try to find the specified actor in our list and mark their tile as
       # dirty in advance, since it's probably going to be different soon.
@@ -258,7 +258,7 @@ class ClientAdventure( ClientEngine ):
       if None != dirty_actor:
          self.tilesdirty.append( tuple( dirty_actor.maptilecoords ) )
 
-      ClientEngine.on_adminloc1( self, connection, event )
+      ClientEngine.on_whoisuser( self, connection, event )
 
       dirty_old_coords = None
       dirty_actor = self.actors.get( event.arguments[1] )

@@ -44,6 +44,8 @@ class Actor:
    framerect = 'DWALK1'
    framecountdown = SPRITE_FRAME_LEN
 
+   walkoffset = (0, 0, 0, 0)
+
    def __init__( self ):
       self.sprite = 'mob_sprites_maid_black.png'
       self.maptilecoords = (0, 0)
