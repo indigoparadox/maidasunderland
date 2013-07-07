@@ -19,12 +19,14 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 
 import gamelayer
 import server
+import actor
 import pytmx
 import logging
 import re
 import os
 import ssl
 import functools
+import json
 import irc.connection
 import irc.client
 from threading import Thread
@@ -37,6 +39,8 @@ except ImportError:
 DEFAULT_ADVENTURE_MAP = 'Farm'
 
 MAP_PROCESS_TIMEOUT = 10
+
+log = logging.getLogger(__name__)
 
 class AsunderlandIRCClient( irc.client.IRC ):
    pass
@@ -51,9 +55,9 @@ class ClientEngine():
    connection = None
    channel = ''
    viewport = (0, 0, 0, 0)
+   actors = {} # All of the actors online right now.
 
    def __init__( self, configdata, graphicslayer ):
-      self.logger = logging.getLogger( 'asunderland.clientengine' )
       self.configdata = configdata
       self.graphicslayer = graphicslayer
 
@@ -80,9 +84,9 @@ class ClientEngine():
       connection.'''
 
       if None == client or None == connection:
-         self.logger.info( serveraddress )
+         log.info( serveraddress )
          self.serveraddress = serveraddress
-         self.logger.info(
+         log.info(
             'Connecting to %s on port %d...' % self.serveraddress
          )
          self.channel = channel
@@ -97,21 +101,51 @@ class ClientEngine():
             connect_factory = irc.connection.Factory( wrapper=ssl_wrapper )
          )
          # TODO: Handle failed connection.
-         self.logger.info(
+         log.info(
             'SSL peer name: ' + str( self.connection.socket.getpeername() )
          )
-         self.logger.info(
+         log.info(
             'SSL cipher: ' + str( self.connection.socket.cipher() )
          )
-         self.logger.info(
+         log.info(
             'SSL certificate: ' +
                str( self.connection.socket.getpeercert() )
          )
          #print vars( self.connection.socket )
          self.connection.join( self.channel )
+
+         self.connection.add_global_handler( 'join', self.on_join )
+         self.connection.add_global_handler( 'part', self.on_part )
+         self.connection.add_global_handler( 'adminloc1', self.on_adminloc1 )
+         # TODO: Handle nick changes and the actors list.
+
+         # TODO: Send a real actor command with parameters.
+         self.connection.send_raw( 'ACTOR' )
+
       else:
          # Preserve a pre-existing client connection.
          pass
+
+   def on_join( self, connection, event ):
+      log.info( 'Peer joined: ' + event.source )
+
+      # Get more information about the new peer.
+      name_match = re.match( r'(.*)!(.*)@(.*)', event.source )
+      self.connection.whois( [name_match.groups()[0]] )
+
+   def on_part( self, connection, event ):
+      pass
+
+   def on_adminloc1( self, connection, event ):
+      # This is probably pretty rude, but take actor data slipped in in
+      # response to a WHOIS request and append it to the actors list.
+      jdata_string = ' '.join( event.arguments[2:] )
+      log.info( 'Received actor for {}: {} '.format(
+         event.arguments[1], jdata_string
+      ) )
+      my_actor = actor.actor_decode( jdata_string )
+      if None != my_actor:
+         self.actors[event.arguments[1]] = my_actor
 
    def set_viewport( self, x, y ):
       self.viewport = (
@@ -119,7 +153,6 @@ class ClientEngine():
          self.viewport[2],
          self.viewport[3]
       )
-      
 
 class ClientTitle( ClientEngine ):
 
@@ -134,7 +167,7 @@ class ClientTitle( ClientEngine ):
 
    def loop( self ):
       self.running = True
-      self.logger.info( "Press any key to continue..." )
+      log.info( "Press any key to continue..." )
       while self.running:
          self.graphicslayer.screen_blank( (255, 255, 255) )
 
@@ -158,7 +191,6 @@ class ClientAdventure( ClientEngine ):
    tileviewport = None
    tilesize = (0, 0)
    tilesmoving = False # Flag to signal redraw of static tiles.
-   mobiles = []
 
    def __init__( self, configdata, graphicslayer ):
       ClientEngine.__init__( self, configdata, graphicslayer )
@@ -176,6 +208,7 @@ class ClientAdventure( ClientEngine ):
       ClientEngine.connect( self, channel, serveraddress, client, connect )
 
       # Load the map from the channel topic if we can.
+      # TODO: Remove these handlers on room change away from this one.
       self.connection.add_global_handler( 'topic', self.on_topic )
       process = 0
       while None == self.gamemap and process < MAP_PROCESS_TIMEOUT:
@@ -184,8 +217,8 @@ class ClientAdventure( ClientEngine ):
 
       if None == self.gamemap:
          # Set the map to a default map.
-         self.logger.warn( 'No topic received.' )
-         self.logger.info(
+         log.warn( 'No topic received.' )
+         log.info(
             'Falling back to default map "%s"', DEFAULT_ADVENTURE_MAP
          )
          self.load_map( DEFAULT_ADVENTURE_MAP )
@@ -197,8 +230,8 @@ class ClientAdventure( ClientEngine ):
          self.load_map( match_map.groups()[0] )
       else:
          # Set the map to a default map.
-         self.logger.error( 'No map specified in topic.' )
-         self.logger.info(
+         log.error( 'No map specified in topic.' )
+         log.info(
             'Falling back to default map "%s"', DEFAULT_ADVENTURE_MAP
          )
          self.load_map( DEFAULT_ADVENTURE_MAP )
@@ -211,10 +244,10 @@ class ClientAdventure( ClientEngine ):
       try:
          # Load the map data file.
          mappath = os.path.join( 'maps', mapname + '.tmx' )
-         self.logger.info( 'Attempting to load map "%s"...' % mappath )
+         log.info( 'Attempting to load map "%s"...' % mappath )
 
          # TODO: Should this be abstracted, since it kind of relies on PyGame?
-         self.gamemap = pytmx.tmxloader.load_pygame( mappath )
+         self.gamemap = pytmx.tmxloader.load_pygame( mappath, pixelalpha=True )
 
          # Make sure the tile layers are homogenous.
          self.tilesize = (self.gamemap.tilesets[0].tilewidth,
@@ -229,10 +262,10 @@ class ClientAdventure( ClientEngine ):
          self.tilesmoving = True
       except:
          # TODO: Set the map to a default or random map or something?
-         self.logger.error(
+         log.error(
             'Unable to load map "%s".' % mappath
          )
-         self.logger.info(
+         log.info(
             'Falling back to default map "%s"', DEFAULT_ADVENTURE_MAP
          )
          self.load_map( DEFAULT_ADVENTURE_MAP )
@@ -290,6 +323,19 @@ class ClientAdventure( ClientEngine ):
             self.render_layer( 1 )
 
          # TODO: Ground mobiles.
+         for actor_key in self.actors.keys():
+            my_actor = self.actors[actor_key]
+            self.graphicslayer.screen_blit(
+               my_actor.sprite_image,
+               destrect=(
+                  (my_actor.maptilecoords[0] * self.tilesize[0]) 
+                     - self.viewport[0],
+                  (my_actor.maptilecoords[1] * self.tilesize[1]) 
+                     - self.viewport[1],
+                  self.tilesize[0],
+                  self.tilesize[1]
+               )
+            )
 
          if self.tilesmoving:
             # TODO: Middle layer lower-half (above player).
