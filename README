@@ -1,0 +1,10 @@
+
+TODO: Write something useful.
+
+= Requirements =
+
+* pyopenssl (https://launchpad.net/pyopenssl)
+* pygame (http://www.pygame.org)
+* pyyaml (http://pyyaml.org/)
+* irc (https://pypi.python.org/pypi/irc)
+
