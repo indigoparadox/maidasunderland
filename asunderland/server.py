@@ -43,7 +43,39 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
    def handle_movement( self, params ):
       # TODO: Determine the player's current location on their map and if there
       #       are any collisions. Respond to the client with their new position.
-      pass
+
+      if None != self.actor:
+         propagate = False
+
+         if 'UP' == params:
+            self.actor.maptilecoords = (
+               self.actor.maptilecoords[0],
+               self.actor.maptilecoords[1] - 1
+            )
+            propagate = True
+         elif 'DOWN' == params:
+            self.actor.maptilecoords = (
+               self.actor.maptilecoords[0],
+               self.actor.maptilecoords[1] + 1
+            )
+            propagate = True
+         elif 'RIGHT' == params:
+            self.actor.maptilecoords = (
+               self.actor.maptilecoords[0] + 1,
+               self.actor.maptilecoords[1]
+            )
+            propagate = True
+         elif 'LEFT' == params:
+            self.actor.maptilecoords = (
+               self.actor.maptilecoords[0] - 1,
+               self.actor.maptilecoords[1]
+            )
+            propagate = True
+
+         if propagate:
+            actor_string = actor.actor_encode( self.actor )
+            for client_key in self.server.clients.keys():
+               self.server.clients[client_key].send_actor( self )
 
    def handle_who( self, params ):
       # TODO: List users in the specified room.
@@ -67,17 +99,8 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
          )
       )
       # Only send actor data if it's available.
-      if None != self.actor:
-         actor_string = actor.actor_encode( whois_client.actor )
-         self.send_queue.append(
-            ':{} {} {} {} {}@{} {}'.format(
-               # We're kind of rudely borrowing an uncommonly used code. It
-               # might be a terrible idea to do this
-               self.server.servername, irc_events.codes['adminloc1'],
-               self.nick, nick, whois_client.user, whois_client.host[0],
-               actor_string
-            )
-         )
+      if None != whois_client.actor:
+         self.send_actor( whois_client )
       self.send_queue.append(
          ':{} {} {} {} :End of /WHOIS list'.format(
             self.server.servername, irc_events.codes['endofwhois'], 
@@ -88,6 +111,22 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
    def handle_away( self, params ):
       # TODO: Implement some kind of sleep bubble.
       pass
+
+   def send_actor( self, client_send ):
+   
+         ''' Encode and send a blob of the given client's actor data to this
+         client. '''
+
+         actor_string = actor.actor_encode( client_send.actor )
+         self.send_queue.append(
+            ':{} {} {} {} {}@{} {}'.format(
+               # We're kind of rudely borrowing an uncommonly used code. It
+               # might be a terrible idea to do this
+               self.server.servername, irc_events.codes['adminloc1'],
+               self.nick, client_send.nick, client_send.user,
+               client_send.host[0], actor_string
+            )
+         )
 
 class AsunderlandIRCServer( irc_server.IRCServer ):
    def __init__( self, args, kwargs ):
