@@ -28,9 +28,6 @@ class Actor:
       self.maptilecoords = (0, 0)
 
 def actor_encode( actor ):
-   print 'XXXXXXXXXXXXXXXXXX'
-   print actor.__dict__
-   print 'XXXXXXXXXXXXXXXXXX'
    return json.dumps( actor.__dict__ )
 
 def actor_decode( actor_string, actor_mod=None ):

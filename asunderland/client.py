@@ -40,7 +40,7 @@ DEFAULT_ADVENTURE_MAP = 'Farm'
 
 MAP_PROCESS_TIMEOUT = 10
 
-log = logging.getLogger(__name__)
+log = logging.getLogger( __name__ )
 
 class AsunderlandIRCClient( irc.client.IRC ):
    pass
@@ -190,7 +190,7 @@ class ClientAdventure( ClientEngine ):
    gamemap = None
    tileviewport = None
    tilesize = (0, 0)
-   tilesmoving = False # Flag to signal redraw of static tiles.
+   tilesdirty = []
 
    def __init__( self, configdata, graphicslayer ):
       ClientEngine.__init__( self, configdata, graphicslayer )
@@ -236,6 +236,28 @@ class ClientAdventure( ClientEngine ):
          )
          self.load_map( DEFAULT_ADVENTURE_MAP )
 
+   def on_adminloc1( self, connection, event ):
+      
+      # Try to find the specified actor in our list and mark their tile as
+      # dirty in advance, since it's probably going to be different soon.
+      dirty_actor = self.actors.get( event.arguments[1] )
+
+      if None != dirty_actor:
+         #log.debug( 'Marking {} as dirty in advance...'.format(
+         #   dirty_actor.maptilecoords
+         #) )
+         self.tilesdirty.append( dirty_actor.maptilecoords )
+         #self.graphicslayer.screen_dirty( (
+         #   (dirty_actor.maptilecoords[0] * self.tilesize[0]) 
+         #      - self.viewport[0],
+         #   (dirty_actor.maptilecoords[1] * self.tilesize[1]) 
+         #      - self.viewport[1],
+         #   self.tilesize[0],
+         #   self.tilesize[1]
+         #) )
+
+      ClientEngine.on_adminloc1( self, connection, event )
+
    def process_key( self, key_char_in ):
       #self.connection.privmsg( self.channel, key_char_in )
       self.connection.send_raw( 'MOVEMENT {}'.format( key_char_in ) )
@@ -257,9 +279,6 @@ class ClientAdventure( ClientEngine ):
                raise Exception( 'Tile width mismatches!' )
             elif self.tilesize[1] != tileset.tileheight:
                raise Exception( 'Tile height mismatches!' )
-
-         # Mark the tiles as undrawn on load so they'll be drawn at least once.
-         self.tilesmoving = True
       except:
          # TODO: Set the map to a default or random map or something?
          log.error(
@@ -271,6 +290,11 @@ class ClientAdventure( ClientEngine ):
          self.load_map( DEFAULT_ADVENTURE_MAP )
 
       self.set_viewport( 0, 0 )
+      # Mark the tiles as undrawn on load so they'll be drawn at least once.
+      #self.tilesmoving = True
+      for row in range( self.tileviewport[1], self.tileviewport[3] ):
+         for column in range( self.tileviewport[0], self.tileviewport[2] ):
+            self.tilesdirty.append( (row, column) )
 
    def set_viewport( self, x, y ):
       ClientEngine.set_viewport( self, x, y )
@@ -287,6 +311,12 @@ class ClientAdventure( ClientEngine ):
       for row in range( self.tileviewport[1], self.tileviewport[3] ):
          for column in \
          range( self.tileviewport[0], self.tileviewport[2] ):
+            if not (row, column) in self.tilesdirty:
+               continue
+
+            #dirty_index = self.tilesdirty.index( (row, column) )
+            #del self.tilesdirty[dirty_index]
+
             # Some layers may be missing tiles.
             try:
                self.graphicslayer.screen_blit(
@@ -314,13 +344,13 @@ class ClientAdventure( ClientEngine ):
          # TODO: Only render tiles that have been changed recently (either by
          #       viewport movement or a mobile walking on/over them).
 
-         if self.tilesmoving:
-            # Lower layer (below player).
-            self.render_layer( 0 )
+         # XXX: Conditionally allow re-rendering of tiles dirtied through other
+         #      means (such as mobile movements).
+         # Lower layer (below player).
+         self.render_layer( 0 )
 
-         if self.tilesmoving:
-            # TODO: Middle layer upper-half (below player).
-            self.render_layer( 1 )
+         # TODO: Middle layer upper-half (below player).
+         self.render_layer( 1 )
 
          # TODO: Ground mobiles.
          for actor_key in self.actors.keys():
@@ -337,20 +367,16 @@ class ClientAdventure( ClientEngine ):
                )
             )
 
-         if self.tilesmoving:
-            # TODO: Middle layer lower-half (above player).
-            self.render_layer( 1 )
+         # TODO: Middle layer lower-half (above player).
+         #self.render_layer( 1 )
 
-         if self.tilesmoving:
-            # Upper layer (above player).
-            self.render_layer( 2 )
+         # Upper layer (above player).
+         self.render_layer( 2 )
 
          # TODO: Sky mobiles.
 
-         if self.tilesmoving:
-            self.tilesmoving = False
-
          # Loop maintenance.
+         self.tilesdirty = []
          self.graphicslayer.screen_flip()
          #gamelayer.sleep( 100 )
 

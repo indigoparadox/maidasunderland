@@ -28,6 +28,8 @@ LEFT = 'LEFT'
 
 MAXLOGFRAMES = 100
 
+log = logging.getLogger( __name__ )
+
 class InputLayer( Thread ):
 
    ''' This class runs constantly in the background and tries to make the other
@@ -59,13 +61,11 @@ class GraphicsLayer():
    configdata = None
    window = None
    dirtyrects = []
-   logger = None
    clock = None
    logframes = 0
 
    def __init__( self, configdata_in ):
       self.configdata = configdata_in
-      self.logger = logging.getLogger( 'asunderland.gamelayer' )
       self.clock = pygame.time.Clock()
 
    def start( self ):
@@ -82,6 +82,15 @@ class GraphicsLayer():
    def events_poll( self ):
       pass
 
+   def screen_dirty( self, destrect ):
+      #log.debug( 'Marking {} as dirty.'.format( destrect ) )
+      self.dirtyrects.append( pygame.Rect(
+         destrect[0],
+         destrect[1],
+         destrect[2],
+         destrect[3]
+      ) )
+
    def screen_blit(
       self, sourceimage, destimage=None, sourcerect=None, destrect=None
    ):
@@ -92,19 +101,14 @@ class GraphicsLayer():
          (left,top,width,height). '''
 
       if None == destrect:
-         self.logger.error( 'Invalid destrect specified. Aborting.' )
+         log.error( 'Invalid destrect specified. Aborting.' )
          return
 
       if None == destimage:
          destimage = self.window
 
       # Add anything blitted to the list of dirty rectangles.
-      self.dirtyrects.append( pygame.Rect(
-         destrect[0],
-         destrect[1],
-         destrect[2],
-         destrect[3]
-      ) )
+      self.screen_dirty( destrect )
 
       # TODO: If source rect and dest rect don't match then scale them.
       destimage.blit( sourceimage, destrect )      
@@ -120,7 +124,7 @@ class GraphicsLayer():
       self.window.blit( mask, (0, 0) )
 
       # Mark the whole screen as dirty.
-      self.dirtyrects.append( pygame.Rect(
+      self.screen_dirty( (
          0,
          0,
          self.configdata['Options']['WindowWidth'],
@@ -136,7 +140,7 @@ class GraphicsLayer():
       # Display the FPS counter to the debug log.
       self.logframes += 1
       if MAXLOGFRAMES <= self.logframes:
-         self.logger.debug( 'FPS: ' + str( self.clock.get_fps() ) )
+         log.debug( 'FPS: ' + str( self.clock.get_fps() ) )
          self.logframes = 0
 
 def sleep( sleep_us ):
