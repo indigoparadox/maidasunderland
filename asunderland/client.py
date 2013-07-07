@@ -238,7 +238,7 @@ class ClientAdventure( ClientEngine ):
 
    def process_key( self, key_char_in ):
       #self.connection.privmsg( self.channel, key_char_in )
-      self.connection.send_raw( 'MOVEMENT %s' % key_char_in )
+      self.connection.send_raw( 'MOVEMENT {}'.format( key_char_in ) )
 
    def load_map( self, mapname ):
       try:
