@@ -111,7 +111,10 @@ class GraphicsLayer():
       self.screen_dirty( destrect )
 
       # TODO: If source rect and dest rect don't match then scale them.
-      destimage.blit( sourceimage, destrect )      
+      if None == sourcerect:
+         destimage.blit( sourceimage, destrect )      
+      else:
+         destimage.blit( sourceimage, destrect, area=sourcerect )
 
    def screen_blank( self, color=(0, 0, 0) ):
       mask = pygame.Surface(

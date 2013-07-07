@@ -21,11 +21,44 @@ import gamelayer
 import json
 from StringIO import StringIO
 
+SPRITE_FRAME_LEN = 10
+
+SPRITE_FRAME_RECTS = {
+   'DWALK1': (0, 0, 32, 32),
+   'DWALK2': (32, 0, 32, 32),
+   'DWALK3': (0, 0, 32, 32),
+   'DWALK4': (64, 0, 32, 32),
+}
+
+SPRITE_FRAME_NEXT = {
+   'DWALK1': 'DWALK2',
+   'DWALK2': 'DWALK3',
+   'DWALK3': 'DWALK4',
+   'DWALK4': 'DWALK1',
+}
+
 class Actor:
+
+   # These don't seem to encode, for some reason, so they should be client-use-
+   # only.
+   framerect = 'DWALK1'
+   framecountdown = SPRITE_FRAME_LEN
 
    def __init__( self ):
       self.sprite = 'mob_sprites_maid_black.png'
       self.maptilecoords = (0, 0)
+
+   def get_framerect( self ):
+      return SPRITE_FRAME_RECTS[self.framerect]
+
+   def animate( self, engine ):
+      if self.framecountdown < 0:
+         self.framerect = SPRITE_FRAME_NEXT.get( self.framerect )
+         self.framecountdown = SPRITE_FRAME_LEN
+         engine.tilesdirty.append( tuple( self.maptilecoords ) )
+      else:
+         self.framecountdown -= 1
+         
 
 def actor_encode( actor ):
    return json.dumps( actor.__dict__ )
@@ -44,7 +77,7 @@ def actor_decode( actor_string, actor_mod=None ):
       setattr( actor_mod, dict_key, actor_dict[dict_key] )
 
    # Fill in missing or computed fields.
-   actor_mod.sprite_image = gamelayer.load_image(
+   actor_mod.spriteimage = gamelayer.load_image(
       'mobiles/{}'.format( actor_mod.sprite )
    )
 
