@@ -82,15 +82,16 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
       pass
 
    def handle_whois( self, params ):
-      # TODO: Implement extension to give engine-specific actor information
-      #       (e.g. sprite/location for adventure engine) for the specified IRC
-      #       user so the client can display it.
 
-      nick = params
+      params = params.split( ' ' )
+
+      # Look up the requested client.
+      nick = params[0]
       whois_client = self.server.clients.get( nick, None )
       if None == whois_client:
          return
 
+      # Send the information to the requester.
       self.send_queue.append(
          ':{} {} {} {} ~{} {} {}'.format(
             self.server.servername, irc_events.codes['whoisuser'],
@@ -98,9 +99,10 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
             whois_client.realname
          )
       )
-      # Only send actor data if it's available.
-      if None != whois_client.actor:
-         self.send_actor( whois_client )
+      if 2 == len( params ) and 'ACTOR' == params[1]:
+         # Only send actor data if it's available.
+         if None != whois_client.actor:
+            self.send_actor( whois_client )
       self.send_queue.append(
          ':{} {} {} {} :End of /WHOIS list'.format(
             self.server.servername, irc_events.codes['endofwhois'], 
@@ -113,20 +115,20 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
       pass
 
    def send_actor( self, client_send ):
-   
-         ''' Encode and send a blob of the given client's actor data to this
-         client. '''
 
-         actor_string = actor.actor_encode( client_send.actor )
-         self.send_queue.append(
-            ':{} {} {} {} {}@{} {}'.format(
-               # We're kind of rudely borrowing an uncommonly used code. It
-               # might be a terrible idea to do this
-               self.server.servername, irc_events.codes['adminloc1'],
-               self.nick, client_send.nick, client_send.user,
-               client_send.host[0], actor_string
-            )
+      ''' Encode and send a blob of the given client's actor data to this
+      client. '''
+
+      actor_string = actor.actor_encode( client_send.actor )
+      self.send_queue.append(
+         ':{} {} {} {} {}@{} {}'.format(
+            # We're kind of rudely borrowing an uncommonly used code. It
+            # might be a terrible idea to do this
+            self.server.servername, irc_events.codes['adminloc1'],
+            self.nick, client_send.nick, client_send.user,
+            client_send.host[0], actor_string
          )
+      )
 
 class AsunderlandIRCServer( irc_server.IRCServer ):
    def __init__( self, args, kwargs ):

@@ -129,9 +129,9 @@ class ClientEngine():
    def on_join( self, connection, event ):
       log.info( 'Peer joined: ' + event.source )
 
-      # Get more information about the new peer.
+      # Get more information about the new joining client.
       name_match = re.match( r'(.*)!(.*)@(.*)', event.source )
-      self.connection.whois( [name_match.groups()[0]] )
+      self.whois( [name_match.groups()[0]], fetchactor=True )
 
    def on_part( self, connection, event ):
       pass
@@ -153,6 +153,18 @@ class ClientEngine():
          self.viewport[2],
          self.viewport[3]
       )
+
+   def whois( self, targets, fetchactor=False ):
+
+      '''Send a WHOIS command. Optionally fetch actor information.'''
+
+      if fetchactor:
+         self.connection.send_raw(
+            'WHOIS {} ACTOR'.format( ','.join( targets ) )
+         )
+      else:
+         self.connection.send_raw( 'WHOIS {}'.format( ','.join( targets ) ) )
+
 
 class ClientTitle( ClientEngine ):
 
