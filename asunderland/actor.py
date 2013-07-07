@@ -37,6 +37,8 @@ SPRITE_FRAME_NEXT = {
    'DWALK4': 'DWALK1',
 }
 
+WALK_STEPS = 1 # These MUST be divisible by engine tile size.
+
 class Actor:
 
    # These don't seem to encode, for some reason, so they should be client-use-
@@ -44,7 +46,8 @@ class Actor:
    framerect = 'DWALK1'
    framecountdown = SPRITE_FRAME_LEN
 
-   walkoffset = (0, 0, 0, 0)
+   walkoffset = (0, 0)
+   walkoldtilecoords = [] # A list to enable longer-than-1-tile walks someday.
 
    def __init__( self ):
       self.sprite = 'mob_sprites_maid_black.png'
@@ -53,14 +56,37 @@ class Actor:
    def get_framerect( self ):
       return SPRITE_FRAME_RECTS[self.framerect]
 
-   def animate( self, engine ):
+   def animate_tile( self, engine ):
+      
+      # Reduce the walking offset.
+      if (0, 0) != self.walkoffset:
+         # Calculate the new walk offset.
+         # TODO: Clean this up!
+         new_x = self.walkoffset[0]
+         new_y = self.walkoffset[1]
+         if 0 > self.walkoffset[0]:
+            new_x = self.walkoffset[0] + WALK_STEPS
+         elif 0 < self.walkoffset[0]:
+            new_x = self.walkoffset[0] - WALK_STEPS
+         if 0 > self.walkoffset[1]:
+            new_y = self.walkoffset[1] + WALK_STEPS
+         elif 0 < self.walkoffset[1]:
+            new_y = self.walkoffset[1] - WALK_STEPS
+         self.walkoffset = (new_x, new_y)
+
+         # Make sure the old tiles get redrawn.
+         for oldtile in self.walkoldtilecoords:
+            engine.tilesdirty.append( oldtile )
+      elif 0 < len( self.walkoldtilecoords ):
+         self.walkoldtilecoords = []
+
+      # Choose the correct next animation frame.
       if self.framecountdown < 0:
          self.framerect = SPRITE_FRAME_NEXT.get( self.framerect )
          self.framecountdown = SPRITE_FRAME_LEN
          engine.tilesdirty.append( tuple( self.maptilecoords ) )
       else:
          self.framecountdown -= 1
-         
 
 def actor_encode( actor ):
    return json.dumps( actor.__dict__ )

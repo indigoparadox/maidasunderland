@@ -136,10 +136,11 @@ class GraphicsLayer():
 
    def screen_flip( self ):
       pygame.display.update( self.dirtyrects )
-      self.dirtyrects = []
+      #pygame.display.flip()
+      del self.dirtyrects[0:len( self.dirtyrects )]
       
       self.clock.tick_busy_loop( 60 )
-      
+
       # Display the FPS counter to the debug log.
       self.logframes += 1
       if MAXLOGFRAMES <= self.logframes:
