@@ -92,13 +92,15 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
          return
 
       # Send the information to the requester.
-      self.send_queue.append(
-         ':{} {} {} {} ~{} {} {}'.format(
-            self.server.servername, irc_events.codes['whoisuser'],
-            self.nick, nick, whois_client.user, whois_client.host[0],
-            whois_client.realname
-         )
-      )
+      # XXX: For some reason, this makes pidgin crash, so we've disabled it for
+      #      now.
+      #self.send_queue.append(
+      #   ':{} {} {} {} {} * {}'.format(
+      #      self.server.servername, irc_events.codes['whoisuser'],
+      #      nick, whois_client.user, whois_client.host[0],
+      #      whois_client.realname
+      #   )
+      #)
       if 2 == len( params ) and 'ACTOR' == params[1]:
          # Only send actor data if it's available.
          if None != whois_client.actor:
@@ -124,7 +126,7 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
          ':{} {} {} {} {}@{} {}'.format(
             # We're kind of rudely borrowing an uncommonly used code. It
             # might be a terrible idea to do this
-            self.server.servername, irc_events.codes['adminloc1'],
+            self.server.servername, irc_events.codes['whoisuser'],
             self.nick, client_send.nick, client_send.user,
             client_send.host[0], actor_string
          )
