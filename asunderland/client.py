@@ -187,6 +187,7 @@ class ClientAdventure( ClientEngine ):
    #       allowing for tilemap-based engines that aren't adventure games, like
    #       strategy games or similar.
 
+   loaded = False
    gamemap = None
    tileviewport = None
    tilesize = (0, 0)
@@ -240,23 +241,17 @@ class ClientAdventure( ClientEngine ):
       
       # Try to find the specified actor in our list and mark their tile as
       # dirty in advance, since it's probably going to be different soon.
+      dirty_old_coords = None
       dirty_actor = self.actors.get( event.arguments[1] )
-
       if None != dirty_actor:
-         #log.debug( 'Marking {} as dirty in advance...'.format(
-         #   dirty_actor.maptilecoords
-         #) )
-         self.tilesdirty.append( dirty_actor.maptilecoords )
-         #self.graphicslayer.screen_dirty( (
-         #   (dirty_actor.maptilecoords[0] * self.tilesize[0]) 
-         #      - self.viewport[0],
-         #   (dirty_actor.maptilecoords[1] * self.tilesize[1]) 
-         #      - self.viewport[1],
-         #   self.tilesize[0],
-         #   self.tilesize[1]
-         #) )
+         self.tilesdirty.append( tuple( dirty_actor.maptilecoords ) )
 
       ClientEngine.on_adminloc1( self, connection, event )
+
+      dirty_old_coords = None
+      dirty_actor = self.actors.get( event.arguments[1] )
+      if None != dirty_actor:
+         self.tilesdirty.append( tuple( dirty_actor.maptilecoords ) )
 
    def process_key( self, key_char_in ):
       #self.connection.privmsg( self.channel, key_char_in )
@@ -292,9 +287,11 @@ class ClientAdventure( ClientEngine ):
       self.set_viewport( 0, 0 )
       # Mark the tiles as undrawn on load so they'll be drawn at least once.
       #self.tilesmoving = True
-      for row in range( self.tileviewport[1], self.tileviewport[3] ):
-         for column in range( self.tileviewport[0], self.tileviewport[2] ):
+      for row in range( self.tileviewport[0], self.tileviewport[2] ):
+         for column in range( self.tileviewport[1], self.tileviewport[3] ):
             self.tilesdirty.append( (row, column) )
+
+      self.loaded = True
 
    def set_viewport( self, x, y ):
       ClientEngine.set_viewport( self, x, y )
@@ -307,76 +304,96 @@ class ClientAdventure( ClientEngine ):
          self.viewport[3] / self.gamemap.tilesets[0].tileheight
       )
 
-   def render_layer( self, layer_index ):
-      for row in range( self.tileviewport[1], self.tileviewport[3] ):
-         for column in \
-         range( self.tileviewport[0], self.tileviewport[2] ):
-            if not (row, column) in self.tilesdirty:
-               continue
+   def _render_mobile( self, coords, mobile_actor ):
+      self.graphicslayer.screen_blit(
+         mobile_actor.spriteimage,
+         sourcerect=mobile_actor.get_framerect(),
+         destrect=(
+            (mobile_actor.maptilecoords[0] * self.tilesize[0]) 
+               - self.viewport[0],
+            (mobile_actor.maptilecoords[1] * self.tilesize[1]) 
+               - self.viewport[1],
+            self.tilesize[0],
+            self.tilesize[1]
+         )
+      )
 
-            #dirty_index = self.tilesdirty.index( (row, column) )
-            #del self.tilesdirty[dirty_index]
+   def _render_tile_layer(
+      self, coords, layer, sourcerect=None, destoffset=None,
+   ):
 
-            # Some layers may be missing tiles.
-            try:
-               self.graphicslayer.screen_blit(
-                  self.gamemap.getTileImage( column, row, layer_index ),
-                  destrect=(
-                     (column * self.tilesize[0]) - self.viewport[0],
-                     (row * self.tilesize[1]) - self.viewport[1],
-                     self.tilesize[0],
-                     self.tilesize[1]
-                  )
-               )
-            except:
-               pass
+      if None == sourcerect:
+         sourcerect = (0, 0, self.tilesize[0], self.tilesize[1])
+
+      if None == destoffset:
+         destoffset = (0, 0, 0, 0)
+
+      # Some layers may be missing tiles.
+      try:
+         self.graphicslayer.screen_blit(
+            self.gamemap.getTileImage( coords[0], coords[1], layer ),
+            sourcerect=sourcerect,
+            destrect=(
+               (coords[0] * self.tilesize[0]) - self.viewport[0]
+                  + destoffset[0],
+               (coords[1] * self.tilesize[1]) - self.viewport[1]
+                  + destoffset[1],
+               self.tilesize[0] + destoffset[2],
+               self.tilesize[1] + destoffset[3]
+            )
+         )
+      except:
+         pass
+
+   def render_tile( self, coords ):
+      # Lower layer (below mobiles).
+      self._render_tile_layer( coords, 0 )
+
+      # Middle layer upper-half (below mobiles).
+      self._render_tile_layer(
+         coords, 1, sourcerect=(0, 0, self.tilesize[0], self.tilesize[1] / 2),
+      )
+
+      # Ground mobiles.
+      for actor_key in self.actors.keys():
+         self._render_mobile( coords, self.actors[actor_key] )
+
+      # Middle layer lower-half (above mobiles).
+      self._render_tile_layer(
+         coords, 1,
+         sourcerect=(
+            0,
+            self.tilesize[1] / 2,
+            self.tilesize[0],
+            self.tilesize[1]
+         ),
+         destoffset=( 0, self.tilesize[1] / 2, 0, 0 )
+      )
+
+      # Upper layer (above mobiles).
+      self._render_tile_layer( coords, 2 )
+
+      # TODO: Sky mobiles.
 
    def loop( self ):
       self.running = True
       while self.running:
 
+         # Handle IRC events.
          self.client.process_once()
-         
-         # TODO: Render layers. Likely: L1/L2 alternating first as animation,
-         #       then sprites and objects, then M1/M2 midway through them
-         #       (e.g. for standing in grass), then H1/H2 above them.
 
-         # TODO: Only render tiles that have been changed recently (either by
-         #       viewport movement or a mobile walking on/over them).
+         if not self.loaded:
+            continue
 
-         # XXX: Conditionally allow re-rendering of tiles dirtied through other
-         #      means (such as mobile movements).
-         # Lower layer (below player).
-         self.render_layer( 0 )
-
-         # TODO: Middle layer upper-half (below player).
-         self.render_layer( 1 )
-
-         # TODO: Ground mobiles.
          for actor_key in self.actors.keys():
-            my_actor = self.actors[actor_key]
-            self.graphicslayer.screen_blit(
-               my_actor.sprite_image,
-               destrect=(
-                  (my_actor.maptilecoords[0] * self.tilesize[0]) 
-                     - self.viewport[0],
-                  (my_actor.maptilecoords[1] * self.tilesize[1]) 
-                     - self.viewport[1],
-                  self.tilesize[0],
-                  self.tilesize[1]
-               )
-            )
+            # This will mark the mobile's tile as dirty, too.
+            self.actors[actor_key].animate( self )
 
-         # TODO: Middle layer lower-half (above player).
-         #self.render_layer( 1 )
-
-         # Upper layer (above player).
-         self.render_layer( 2 )
-
-         # TODO: Sky mobiles.
-
-         # Loop maintenance.
+         # Render dirty tiles.
+         for dirty_coords in self.tilesdirty:
+            self.render_tile( dirty_coords )
          self.tilesdirty = []
+            
+         # Loop maintenance.
          self.graphicslayer.screen_flip()
-         #gamelayer.sleep( 100 )
 
