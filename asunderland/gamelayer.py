@@ -116,6 +116,21 @@ class GraphicsLayer():
       else:
          destimage.blit( sourceimage, destrect, area=sourcerect )
 
+   def screen_rect( self, color=(0, 0, 0), destrect=None ):
+      
+      # TODO: Flesh this out a bit more, but it's just a debug tool for now.
+
+      pygame.draw.rect(
+         self.window,
+         color,
+         pygame.Rect(
+            destrect[0],
+            destrect[1],
+            destrect[2],
+            destrect[3]
+         )
+      )
+
    def screen_blank( self, color=(0, 0, 0) ):
       mask = pygame.Surface(
          (self.configdata['Options']['WindowWidth'],
