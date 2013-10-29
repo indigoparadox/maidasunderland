@@ -376,12 +376,25 @@ class ClientAdventure( ClientEngine ):
       except:
          pass
 
-   def render_tile( self, coords ):
+   def render_tile( self, coords, debug=False ):
+
       # Lower layer (below mobiles).
       self._render_tile_layer( coords, 0 )
 
       # Middle layer upper-half (below mobiles).
       self._render_tile_layer( coords, 1 )
+
+      # DEBUG:
+      if debug and not self.walk_debug_first_pass:
+         self.graphicslayer.screen_rect(
+            (0, 0, 255),
+            destrect=(
+               (coords[0] * self.tilesize[0]) - self.viewport[0],
+               (coords[1] * self.tilesize[1]) - self.viewport[1],
+               32,
+               32
+            )
+         )
 
       # Ground mobiles.
       for actor_key in self.actors.keys():
@@ -408,6 +421,10 @@ class ClientAdventure( ClientEngine ):
 
    def loop( self ):
       self.running = True
+
+      # DEBUG:
+      self.walk_debug_first_pass = True
+
       while self.running:
 
          # Handle IRC events.
@@ -425,7 +442,7 @@ class ClientAdventure( ClientEngine ):
          # Render dirty tiles.
          for dirty_coords in self.tilesdirty:
             log.debug( 'Rendering dirty tile {}'.format( dirty_coords ) )
-            self.render_tile( dirty_coords )
+            self.render_tile( dirty_coords, True )
          del self.tilesdirty[0:len( self.tilesdirty )]
 
          # DEBUG:
@@ -434,6 +451,9 @@ class ClientAdventure( ClientEngine ):
          #   del self.tilesdirty[0:len( self.tilesdirty )]
          #except:
          #   pass
+
+         # DEBUG:
+         self.walk_debug_first_pass = False
             
          # Loop maintenance.
          self.graphicslayer.screen_flip()

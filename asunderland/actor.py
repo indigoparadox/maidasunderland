@@ -77,8 +77,8 @@ class Actor:
          # Make sure the old tiles get redrawn.
          # XXX: This seems to append an increasing number of tiles with each
          #      call.
-         #for oldtile in self.walkoldtilecoords:
-         #   engine.tilesdirty.append( oldtile )
+         for oldtile in self.walkoldtilecoords:
+            engine.tilesdirty.append( oldtile )
       elif 0 < len( self.walkoldtilecoords ):
          self.walkoldtilecoords = []
 
