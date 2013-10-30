@@ -19,6 +19,7 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 
 import gamelayer
 import json
+import logging
 from StringIO import StringIO
 
 SPRITE_FRAME_LEN = 10
@@ -38,6 +39,8 @@ SPRITE_FRAME_NEXT = {
 }
 
 WALK_STEPS = 1 # These MUST be divisible by engine tile size.
+
+log = logging.getLogger( __name__ )
 
 class Actor:
 
@@ -75,12 +78,19 @@ class Actor:
          self.walkoffset = (new_x, new_y)
 
          # Make sure the old tiles get redrawn.
-         # XXX: This seems to append an increasing number of tiles with each
-         #      call.
          for oldtile in self.walkoldtilecoords:
+            #log.debug(
+            #   'Adding {}, {} to dirty tiles.'.format( oldtile[0], oldtile[1] )
+            #)
             engine.tilesdirty.append( oldtile )
       elif 0 < len( self.walkoldtilecoords ):
-         self.walkoldtilecoords = []
+         log.debug(
+            # TODO: Implement sprite name/serial.
+            '{} clearing walked tile list.'.format( 0 )
+         )
+         # Clear the list in-place so that it's emptied despite being 
+         # referenced all over the place.
+         del self.walkoldtilecoords[0:len( self.walkoldtilecoords )]
 
       # Choose the correct next animation frame.
       if self.framecountdown < 0:
