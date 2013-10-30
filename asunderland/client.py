@@ -275,6 +275,7 @@ class ClientAdventure( ClientEngine ):
             (old_coords[1] - new_coords[1]) * self.tilesize[1]
          ) )
          dirty_actor.walkoldtilecoords.append( old_coords )
+         dirty_actor.walkoldtilecoords.append( new_coords )
 
    def process_key( self, key_char_in ):
       #self.connection.privmsg( self.channel, key_char_in )
@@ -385,16 +386,16 @@ class ClientAdventure( ClientEngine ):
       self._render_tile_layer( coords, 1 )
 
       # DEBUG:
-      if debug and not self.walk_debug_first_pass:
-         self.graphicslayer.screen_rect(
-            (0, 0, 255),
-            destrect=(
-               (coords[0] * self.tilesize[0]) - self.viewport[0],
-               (coords[1] * self.tilesize[1]) - self.viewport[1],
-               32,
-               32
-            )
-         )
+      #if debug and not self.walk_debug_first_pass:
+      #   self.graphicslayer.screen_rect(
+      #      (0, 0, 255),
+      #      destrect=(
+      #         (coords[0] * self.tilesize[0]) - self.viewport[0],
+      #         (coords[1] * self.tilesize[1]) - self.viewport[1],
+      #         32,
+      #         32
+      #      )
+      #   )
 
       # Ground mobiles.
       for actor_key in self.actors.keys():
@@ -437,20 +438,15 @@ class ClientAdventure( ClientEngine ):
             # This will mark the mobile's tile as dirty, too.
             self.actors[actor_key].animate_tile( self )
 
-         log.debug( 'Beginning render cycle.' )
+         #log.debug( 'Beginning render cycle.' )
 
          # Render dirty tiles.
          for dirty_coords in self.tilesdirty:
-            log.debug( 'Rendering dirty tile {}'.format( dirty_coords ) )
+            #log.debug( 'Rendering dirty tile {}'.format( dirty_coords ) )
             self.render_tile( dirty_coords, True )
+         # Clear the list in-place so that it's emptied despite being 
+         # referenced all over the place.
          del self.tilesdirty[0:len( self.tilesdirty )]
-
-         # DEBUG:
-         #try:
-         #   self.render_tile( self.tilesdirty[0] )
-         #   del self.tilesdirty[0:len( self.tilesdirty )]
-         #except:
-         #   pass
 
          # DEBUG:
          self.walk_debug_first_pass = False
