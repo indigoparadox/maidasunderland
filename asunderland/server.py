@@ -19,8 +19,8 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
 import json
-import actor
 import logging
+from actor import Actor
 from irc import server as irc_server
 from irc import events as irc_events
 from OpenSSL import SSL
@@ -35,10 +35,10 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
 
    #def __init__( self, request, client_address, server ):
    #   irc_server.IRCClient( request, client_address, server )
-   #   self.actor = actor.Actor()
+   #   self.actor = Actor()
 
    def handle_actor( self, params ):
-      self.actor = actor.Actor()
+      self.actor = Actor()
 
    def handle_movement( self, params ):
       # TODO: Determine the player's current location on their map and if there
@@ -75,7 +75,7 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
             propagate = True
 
          if propagate:
-            actor_string = actor.actor_encode( self.actor )
+            actor_string = self.actor.encode()
             for client_key in self.server.clients.keys():
                self.server.clients[client_key].send_actor( self )
 
@@ -123,7 +123,7 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
       ''' Encode and send a blob of the given client's actor data to this
       client. '''
 
-      actor_string = actor.actor_encode( client_send.actor )
+      actor_string = client_send.actor.encode()
       self.send_queue.append(
          ':{} {} {} {} {}@{} {}'.format(
             # We're kind of rudely borrowing an uncommonly used code. It
