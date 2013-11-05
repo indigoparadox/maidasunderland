@@ -52,7 +52,27 @@ class Actor:
    walkoffset = (0, 0)
    walkoldtilecoords = [] # A list to enable longer-than-1-tile walks someday.
 
+   @classmethod
+   def from_json( cls, actor_string ):
+      actor_out = Actor()
+
+      # Create and populate an actor object.
+      actor_dict = json.load( StringIO( actor_string ) )
+      # TODO: Maybe add some error checking for invalid keys and such.
+      for dict_key in actor_dict.keys():
+         setattr( actor_out, dict_key, actor_dict[dict_key] )
+
+      # Fill in missing or computed fields.
+      actor_out.spriteimage = gamelayer.load_image(
+         'mobiles/{}'.format( actor_out.sprite )
+      )
+
+      return actor_out
+
    def __init__( self ):
+
+      # TODO: Add a ready() function and have that return true when fields are
+      #       full.
       self.sprite = 'mob_sprites_maid_black.png'
       self.maptilecoords = (0, 0)
 
@@ -100,27 +120,6 @@ class Actor:
       else:
          self.framecountdown -= 1
 
-def actor_encode( actor ):
-   return json.dumps( actor.__dict__ )
-
-def actor_decode( actor_string, actor_mod=None ):
-
-   # TODO: Handle partial dictionaries with specific attributes for an existing
-   #       actor.
-   
-   # Create and populate an actor object.
-   actor_dict = json.load( StringIO( actor_string ) )
-   if None == actor_mod:
-      actor_mod = Actor()
-   # TODO: Maybe add some error checking for invalid keys and such.
-   for dict_key in actor_dict.keys():
-      setattr( actor_mod, dict_key, actor_dict[dict_key] )
-
-   # Fill in missing or computed fields.
-   actor_mod.spriteimage = gamelayer.load_image(
-      'mobiles/{}'.format( actor_mod.sprite )
-   )
-
-   return actor_mod
-
+   def encode( self ):
+      return json.dumps( self.__dict__ )
 

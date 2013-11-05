@@ -19,7 +19,6 @@ along with Asunderland.  If not, see <http://www.gnu.org/licenses/>.
 
 import gamelayer
 import server
-import actor
 import pytmx
 import logging
 import re
@@ -29,6 +28,7 @@ import functools
 import json
 import irc.connection
 import irc.client
+from actor import Actor
 from threading import Thread
 from yaml import load, dump
 try:
@@ -143,7 +143,9 @@ class ClientEngine():
       log.info( 'Received actor for {}: {} '.format(
          event.arguments[1], jdata_string
       ) )
-      my_actor = actor.actor_decode( jdata_string )
+      # TODO: Handle partial dictionaries with specific attributes for an
+      #       existing actor.
+      my_actor = Actor.from_json( jdata_string )
       if None != my_actor:
          self.actors[event.arguments[1]] = my_actor
 
