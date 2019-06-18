@@ -68,6 +68,11 @@ class ClientEngine():
          self.configdata['Options']['WindowHeight']
       )
 
+      # TODO: Set viewport based on our actor's position on the server map.
+
+      # TODO: Fetch list of mobiles with /who, iterating with /whois for each
+      #       one to find sprite/location.
+
    def connect(
       self,
       channel,
@@ -119,7 +124,11 @@ class ClientEngine():
          self.connection.add_global_handler( 'whoisuser', self.on_whoisuser )
          # TODO: Handle nick changes and the actors list.
 
-         # TODO: Send a real actor command with parameters.
+         # XXX: This is where the actor originates right now, basically.
+         
+         # TODO: Send a real actor command with parameters likely loaded from
+         #       a local persistant store, allowing for D&D-like portable
+         #       characters.
          self.connection.send_raw( 'ACTOR' )
 
       else:
@@ -209,9 +218,6 @@ class ClientAdventure( ClientEngine ):
 
    def __init__( self, configdata, graphicslayer ):
       ClientEngine.__init__( self, configdata, graphicslayer )
-
-      # TODO: Fetch list of mobiles with /who, iterating with /whois for each
-      #       one to find sprite/location.
 
    def connect(
       self,

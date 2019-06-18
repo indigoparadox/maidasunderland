@@ -75,7 +75,7 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
             propagate = True
 
          if propagate:
-            actor_string = self.actor.encode()
+            actor_string = self.actor.to_json()
             for client_key in self.server.clients.keys():
                self.server.clients[client_key].send_actor( self )
 
@@ -123,7 +123,7 @@ class AsunderlandIRCClientHandler( irc_server.IRCClient ):
       ''' Encode and send a blob of the given client's actor data to this
       client. '''
 
-      actor_string = client_send.actor.encode()
+      actor_string = client_send.actor.to_json()
       self.send_queue.append(
          ':{} {} {} {} {}@{} {}'.format(
             # We're kind of rudely borrowing an uncommonly used code. It
