@@ -44,13 +44,12 @@ log = logging.getLogger( __name__ )
 
 class Actor:
 
-   # These don't seem to encode, for some reason, so they should be client-use-
-   # only.
+   # Class attributes, for client animation use only.
    framerect = 'DWALK1'
    framecountdown = SPRITE_FRAME_LEN
-
    walkoffset = (0, 0)
-   walkoldtilecoords = [] # A list to enable longer-than-1-tile walks someday.
+   walkoldtilecoords = [] # A list to enable longer-than-1-tile walks.
+   sprite = None
 
    @classmethod
    def from_json( cls, actor_string ):
@@ -62,19 +61,32 @@ class Actor:
       for dict_key in actor_dict.keys():
          setattr( actor_out, dict_key, actor_dict[dict_key] )
 
-      # Fill in missing or computed fields.
-      actor_out.spriteimage = gamelayer.load_image(
-         'mobiles/{}'.format( actor_out.sprite )
-      )
+      if actor_out.ready():
+         # Fill in missing or computed fields.
+         actor_out.spriteimage = gamelayer.load_image(
+            'mobiles/{}'.format( actor_out.sprite )
+         )
 
-      return actor_out
+         return actor_out
+      else:
+         return None
 
    def __init__( self ):
 
       # TODO: Add a ready() function and have that return true when fields are
       #       full.
-      self.sprite = 'mob_sprites_maid_black.png'
+      #self.sprite = 'mob_sprites_maid_black.png'
+      #self.maptilecoords = (0, 0)
+
       self.maptilecoords = (0, 0)
+
+      animations = {}
+
+   def ready( self ):
+      if None == self.sprite:
+         return False
+
+      return True
 
    def get_framerect( self ):
       return SPRITE_FRAME_RECTS[self.framerect]
@@ -120,6 +132,11 @@ class Actor:
       else:
          self.framecountdown -= 1
 
-   def encode( self ):
+   def from_json_partial( self, actor_string ):
+      # TODO: Handle partial dictionaries with specific attributes for an
+      #       existing actor.
+      pass
+
+   def to_json( self ):
       return json.dumps( self.__dict__ )
 
