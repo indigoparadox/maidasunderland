@@ -5,10 +5,21 @@ stable to interfere with yet.
 
 TODO: Write something useful.
 
-= Requirements =
+## Requirements
 
-* pyopenssl (https://launchpad.net/pyopenssl)
-* pygame (http://www.pygame.org)
-* pyyaml (http://pyyaml.org/)
-* irc (https://pypi.python.org/pypi/irc)
+  * pyopenssl (https://launchpad.net/pyopenssl)
+  * pygame (http://www.pygame.org)
+  * pyyaml (http://pyyaml.org/)
+  * irc (https://pypi.python.org/pypi/irc)
+
+## TODO
+
+### Animations
+
+  * Animation is a structure with a list of frames.
+  * Frame is a structure with an image filename and display time.
+
+### HTTP Server/Client
+
+  * Fetch assets not present locally.
 
