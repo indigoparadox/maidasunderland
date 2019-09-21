@@ -25,71 +25,71 @@ from irc import server as irc_server
 from threading import Thread
 from yaml import load, dump
 try:
-   from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
-   from yaml import Loader, Dumper
+    from yaml import Loader, Dumper
 
 def main():
-   parser = argparse.ArgumentParser()
-   parser.add_argument(
-      '-v', '--verbosity', action='store', dest='debug',
-      help='Display (d)ebug/(i)nfo messages on stdout.'
-   )
-   args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-v', '--verbosity', action='store', dest='debug',
+        help='Display (d)ebug/(i)nfo messages on stdout.'
+    )
+    args = parser.parse_args()
 
-   if 'd' == args.debug:
-      logging.basicConfig( level=logging.DEBUG )
-   if 'i' == args.debug:
-      logging.basicConfig( level=logging.INFO )
-   else:
-      logging.basicConfig()
+    if 'd' == args.debug:
+        logging.basicConfig( level=logging.DEBUG )
+    if 'i' == args.debug:
+        logging.basicConfig( level=logging.INFO )
+    else:
+        logging.basicConfig()
 
-   my_logger = logging.getLogger( 'asunderland' )
+    my_logger = logging.getLogger( 'asunderland' )
 
-   # If there's a data directory, descend into it.
-   if os.path.isdir( 'data' ):
-      os.chdir( 'data' )
+    # If there's a data directory, descend into it.
+    if os.path.isdir( 'data' ):
+        os.chdir( 'data' )
 
-   # Read configuration.
-   configdata = None
-   try:
-      with open( 'config.yaml', 'r' ) as configfile:
-         configdata = load( configfile )
-   except:
-      my_logger.error( 'Unable to open configuration file. Aborting.' )
+    # Read configuration.
+    configdata = None
+    try:
+        with open( 'config.yaml', 'r' ) as configfile:
+            configdata = load( configfile )
+    except:
+        my_logger.error( 'Unable to open configuration file. Aborting.' )
 
-   # Start the abstraction layers and game engine.
-   my_graphicslayer = gamelayer.GraphicsLayer( configdata )
-   my_graphicslayer.start()
-   my_engine = client.ClientTitle( configdata, my_graphicslayer )
+    # Start the abstraction layers and game engine.
+    my_graphicslayer = gamelayer.GraphicsLayer( configdata )
+    my_graphicslayer.start()
+    my_engine = client.ClientTitle( configdata, my_graphicslayer )
 
-   # Keep playing until we don't get passed another engine by the main loop.
-   my_server = None
-   while None != my_engine:
-      # Setup a fresh game layer.
-      my_inputlayer = gamelayer.InputLayer( my_engine )
-      my_inputlayer.start()
+    # Keep playing until we don't get passed another engine by the main loop.
+    my_server = None
+    while None != my_engine:
+        # Setup a fresh game layer.
+        my_inputlayer = gamelayer.InputLayer( my_engine )
+        my_inputlayer.start()
 
-      if not isinstance( my_engine, client.ClientTitle ):
-         # If this is an SP game, start a local server to host it in the
-         # background.
-         my_logger.info( 'Starting server on localhost for single player...' )
-         my_server = server.AsunderlandIRCServer(
-            ('localhost', server.DEFAULT_PORT),
-            server.AsunderlandIRCClientHandler
-         )
-         Thread( target=my_server.serve_forever ).start()
-         my_engine.connect( '#lobby' )
+        if not isinstance( my_engine, client.ClientTitle ):
+            # If this is an SP game, start a local server to host it in the
+            # background.
+            my_logger.info( 'Starting server on localhost for single player...' )
+            my_server = server.AsunderlandIRCServer(
+                ('localhost', server.DEFAULT_PORT),
+                server.AsunderlandIRCClientHandler
+            )
+            Thread( target=my_server.serve_forever ).start()
+            my_engine.connect( '#lobby' )
 
-      # Delegate the main loop to the engine we've built.
-      my_engine = my_engine.loop()
-      if None != my_server:
-         my_logger.info( 'Stopping server on localhost...' )
-         my_server.shutdown()
+        # Delegate the main loop to the engine we've built.
+        my_engine = my_engine.loop()
+        if None != my_server:
+            my_logger.info( 'Stopping server on localhost...' )
+            my_server.shutdown()
 
-   my_graphicslayer.quit()
-   logging.shutdown()
+    my_graphicslayer.quit()
+    logging.shutdown()
 
 if __name__ == '__main__':
-   main()
+    main()
 
